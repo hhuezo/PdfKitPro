@@ -148,6 +148,8 @@ fun PdfScanScreen(
     val documentScannerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult(),
     ) { activityResult ->
+        // Si el usuario descarta en el escáner de Google, no tocamos las páginas
+        // que ya estaban guardadas en esta pantalla.
         if (activityResult.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
         val scanResult = GmsDocumentScanningResult.fromActivityResultIntent(activityResult.data)
         val pages = scanResult?.pages.orEmpty()
@@ -172,10 +174,16 @@ fun PdfScanScreen(
             }
             return
         }
-        val remaining = (30 - pagePaths.size).coerceAtLeast(1)
+        if (pagePaths.size >= 30) {
+            scope.launch {
+                snackbar.showSnackbar(context.getString(R.string.scan_error_page_limit))
+            }
+            return
+        }
+        // Una página por sesión: si descartan a mitad, no se pierden las ya confirmadas.
         val options = GmsDocumentScannerOptions.Builder()
             .setGalleryImportAllowed(false)
-            .setPageLimit(remaining.coerceAtMost(20))
+            .setPageLimit(1)
             .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
             .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_BASE)
             .build()

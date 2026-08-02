@@ -69,7 +69,7 @@
     <string name="scan_title">Escanear a PDF</string>
     <string name="scan_pages_meta">%1$d páginas</string>
     <string name="scan_empty">Aún no hay páginas</string>
-    <string name="scan_empty_hint">Escanea un documento (detecta bordes y permite recortar) o elige de la galería</string>
+    <string name="scan_empty_hint">Escanea una página (detecta bordes y permite recortar), vuelve a tocar Escanear para agregar más, o elige de la galería</string>
     <string name="scan_camera">Escanear</string>
     <string name="scan_gallery">Galería</string>
     <string name="scan_create">Crear PDF</string>
@@ -88,6 +88,7 @@
     <string name="scan_error_empty">Agrega al menos una página</string>
     <string name="scan_error_images">No se pudieron cargar las imágenes</string>
     <string name="scan_error_scanner">No se pudo abrir el escáner de documentos</string>
+    <string name="scan_error_page_limit">Ya alcanzaste el máximo de 30 páginas</string>
     <string name="scan_error">No se pudo crear el PDF</string>
 
     <string name="nav_home">Inicio</string>
