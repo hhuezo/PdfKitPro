@@ -513,8 +513,11 @@ fun PdfReaderScreen(
                             .coerceIn(baseWidthPx, (baseWidthPx * MaxZoom).roundToInt())
                     }
 
+                    val isZoomed = scale > 1.01f
+
                     LazyColumn(
                         state = listState,
+                        userScrollEnabled = !isZoomed,
                         modifier = Modifier
                             .fillMaxSize()
                             .pointerInput(viewportWidthPx, viewportHeightPx) {
@@ -523,28 +526,49 @@ fun PdfReaderScreen(
                                     do {
                                         val event = awaitPointerEvent(PointerEventPass.Initial)
                                         val pressed = event.changes.filter { it.pressed }
-                                        if (pressed.size >= 2) {
-                                            val zoomChange = event.calculateZoom()
-                                            val panChange = event.calculatePan()
-                                            val newScale =
-                                                (latestScale * zoomChange).coerceIn(MinZoom, MaxZoom)
+                                        when {
+                                            // Pellizco: zoom + pan con dos dedos
+                                            pressed.size >= 2 -> {
+                                                val zoomChange = event.calculateZoom()
+                                                val panChange = event.calculatePan()
+                                                val newScale =
+                                                    (latestScale * zoomChange)
+                                                        .coerceIn(MinZoom, MaxZoom)
 
-                                            val maxX = (viewportWidthPx * (newScale - 1f)) / 2f
-                                            val maxY = (viewportHeightPx * (newScale - 1f)) / 2f
-                                            val newOffset = if (newScale > 1.01f) {
-                                                Offset(
+                                                val maxX =
+                                                    (viewportWidthPx * (newScale - 1f)) / 2f
+                                                val maxY =
+                                                    (viewportHeightPx * (newScale - 1f)) / 2f
+                                                val newOffset = if (newScale > 1.01f) {
+                                                    Offset(
+                                                        x = (latestOffset.x + panChange.x)
+                                                            .coerceIn(-maxX, maxX),
+                                                        y = (latestOffset.y + panChange.y)
+                                                            .coerceIn(-maxY, maxY),
+                                                    )
+                                                } else {
+                                                    Offset.Zero
+                                                }
+
+                                                scale = newScale
+                                                offset = newOffset
+                                                pressed.forEach { it.consume() }
+                                            }
+                                            // Con zoom: un dedo mueve la vista
+                                            pressed.size == 1 && latestScale > 1.01f -> {
+                                                val panChange = event.calculatePan()
+                                                val maxX =
+                                                    (viewportWidthPx * (latestScale - 1f)) / 2f
+                                                val maxY =
+                                                    (viewportHeightPx * (latestScale - 1f)) / 2f
+                                                offset = Offset(
                                                     x = (latestOffset.x + panChange.x)
                                                         .coerceIn(-maxX, maxX),
                                                     y = (latestOffset.y + panChange.y)
                                                         .coerceIn(-maxY, maxY),
                                                 )
-                                            } else {
-                                                Offset.Zero
+                                                pressed.forEach { it.consume() }
                                             }
-
-                                            scale = newScale
-                                            offset = newOffset
-                                            pressed.forEach { it.consume() }
                                         }
                                     } while (event.changes.any { it.pressed })
                                 }
