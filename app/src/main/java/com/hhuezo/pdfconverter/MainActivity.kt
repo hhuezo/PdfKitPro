@@ -1,6 +1,7 @@
 package com.hhuezo.pdfconverter
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -10,6 +11,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -366,25 +368,44 @@ fun AndrosApp(
         recentPdfs.map { it.toUiModel() }
     }
 
+    fun navigateBack() {
+        when {
+            signPdfUri != null -> signPdfUri = null
+            mergeActive -> mergeActive = false
+            scanActive -> scanActive = false
+            deletePagesUri != null -> deletePagesUri = null
+            convertToImageUri != null -> convertToImageUri = null
+            readerUri != null -> readerUri = null
+            currentDestination != AppDestination.Home -> {
+                currentDestination = AppDestination.Home
+            }
+            else -> {
+                context.findActivity()?.moveTaskToBack(true)
+            }
+        }
+    }
+
+    BackHandler(onBack = ::navigateBack)
+
     val activeSignUri = signPdfUri
     if (activeSignUri != null) {
         PdfSignScreen(
             uri = Uri.parse(activeSignUri),
-            onBack = { signPdfUri = null },
+            onBack = ::navigateBack,
         )
         return
     }
 
     if (mergeActive) {
         PdfMergeScreen(
-            onBack = { mergeActive = false },
+            onBack = ::navigateBack,
         )
         return
     }
 
     if (scanActive) {
         PdfScanScreen(
-            onBack = { scanActive = false },
+            onBack = ::navigateBack,
         )
         return
     }
@@ -393,7 +414,7 @@ fun AndrosApp(
     if (activeDeletePagesUri != null) {
         PdfDeletePagesScreen(
             uri = Uri.parse(activeDeletePagesUri),
-            onBack = { deletePagesUri = null },
+            onBack = ::navigateBack,
         )
         return
     }
@@ -402,7 +423,7 @@ fun AndrosApp(
     if (activeConvertUri != null) {
         PdfToImageScreen(
             uri = Uri.parse(activeConvertUri),
-            onBack = { convertToImageUri = null },
+            onBack = ::navigateBack,
         )
         return
     }
@@ -413,7 +434,7 @@ fun AndrosApp(
             uri = Uri.parse(activeUri),
             displayName = readerName,
             initialPageIndex = readerInitialPage,
-            onBack = { readerUri = null },
+            onBack = ::navigateBack,
             onPageChanged = { pageIndex ->
                 scope.launch {
                     repository.updateLastPage(activeUri, pageIndex)
@@ -508,6 +529,15 @@ private fun RecentPdf.toUiModel(): RecentPdfFile {
         name = displayName,
         meta = meta,
     )
+}
+
+private fun android.content.Context.findActivity(): Activity? {
+    var current: android.content.Context? = this
+    while (current is android.content.ContextWrapper) {
+        if (current is Activity) return current
+        current = current.baseContext
+    }
+    return current as? Activity
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
