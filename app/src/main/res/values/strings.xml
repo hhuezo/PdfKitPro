@@ -154,6 +154,12 @@
     <string name="reader_delete_pages">Eliminar páginas</string>
     <string name="reader_more">Más opciones</string>
     <string name="reader_delete">Eliminar PDF</string>
+    <string name="reader_action_sign">Firmar</string>
+    <string name="reader_action_image">Imagen</string>
+    <string name="reader_action_delete_pages">Páginas</string>
+    <string name="reader_action_delete">Eliminar</string>
+    <string name="reader_actions_hide">Ocultar opciones</string>
+    <string name="reader_actions_show">Mostrar opciones</string>
     <string name="reader_delete_title">¿Eliminar este PDF?</string>
     <string name="reader_delete_message">Se borrará el archivo y se quitará de recientes. Esta acción no se puede deshacer.</string>
     <string name="reader_delete_confirm">Eliminar</string>

@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
@@ -36,15 +37,14 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Draw
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FindInPage
 import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ZoomInMap
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,7 +56,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -76,9 +75,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -93,6 +94,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.graphics.Paint as AndroidPaint
 import android.graphics.RectF as AndroidRectF
+import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
 import com.hhuezo.pdfconverter.pdf.PdfHighlightRect
@@ -135,7 +137,7 @@ fun PdfReaderScreen(
     var offset by remember { mutableStateOf(Offset.Zero) }
     var showGoToPage by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var showOverflowMenu by remember { mutableStateOf(false) }
+    var actionsBarVisible by remember { mutableStateOf(true) }
     var pageInput by remember { mutableStateOf("") }
     var pageInputError by remember { mutableStateOf(false) }
     var renderWidthPx by remember { mutableIntStateOf(0) }
@@ -290,7 +292,7 @@ fun PdfReaderScreen(
                                         doc.pageCount,
                                     ) + zoomLabel,
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                                 )
                             }
                         }
@@ -355,76 +357,37 @@ fun PdfReaderScreen(
                                 contentDescription = stringResource(R.string.reader_go_to_page),
                             )
                         }
-                        Box {
-                            IconButton(
-                                onClick = { showOverflowMenu = true },
-                                enabled = session != null,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.MoreVert,
-                                    contentDescription = stringResource(R.string.reader_more),
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = showOverflowMenu,
-                                onDismissRequest = { showOverflowMenu = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.reader_sign)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        onSignPdf()
+                        IconButton(
+                            onClick = { actionsBarVisible = !actionsBarVisible },
+                        ) {
+                            Icon(
+                                imageVector = if (actionsBarVisible) {
+                                    Icons.Outlined.ExpandLess
+                                } else {
+                                    Icons.Outlined.ExpandMore
+                                },
+                                contentDescription = stringResource(
+                                    if (actionsBarVisible) {
+                                        R.string.reader_actions_hide
+                                    } else {
+                                        R.string.reader_actions_show
                                     },
-                                    leadingIcon = {
-                                        Icon(Icons.Outlined.Draw, contentDescription = null)
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.reader_convert_to_image)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        onConvertToImage()
-                                    },
-                                    leadingIcon = {
-                                        Icon(Icons.Outlined.Image, contentDescription = null)
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.reader_delete_pages)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        onDeletePages()
-                                    },
-                                    leadingIcon = {
-                                        Icon(Icons.Outlined.DeleteSweep, contentDescription = null)
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = stringResource(R.string.reader_delete),
-                                            color = MaterialTheme.colorScheme.error,
-                                        )
-                                    },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        showDeleteConfirm = true
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Delete,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error,
-                                        )
-                                    },
-                                )
-                            }
+                                ),
+                            )
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
+                    colors = androsTopAppBarColors(),
                 )
+
+                AnimatedVisibility(visible = actionsBarVisible) {
+                    ReaderActionsBar(
+                        enabled = session != null,
+                        onSignPdf = onSignPdf,
+                        onConvertToImage = onConvertToImage,
+                        onDeletePages = onDeletePages,
+                        onDeletePdf = { showDeleteConfirm = true },
+                    )
+                }
 
                 AnimatedVisibility(visible = searchVisible) {
                     SearchBar(
@@ -656,6 +619,102 @@ fun PdfReaderScreen(
                     Text(stringResource(R.string.reader_cancel))
                 }
             },
+        )
+    }
+}
+
+@Composable
+private fun ReaderActionsBar(
+    enabled: Boolean,
+    onSignPdf: () -> Unit,
+    onConvertToImage: () -> Unit,
+    onDeletePages: () -> Unit,
+    onDeletePdf: () -> Unit,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.Top,
+        ) {
+            ReaderActionItem(
+                icon = Icons.Outlined.Draw,
+                label = stringResource(R.string.reader_action_sign),
+                contentDescription = stringResource(R.string.reader_sign),
+                enabled = enabled,
+                onClick = onSignPdf,
+                modifier = Modifier.weight(1f),
+            )
+            ReaderActionItem(
+                icon = Icons.Outlined.Image,
+                label = stringResource(R.string.reader_action_image),
+                contentDescription = stringResource(R.string.reader_convert_to_image),
+                enabled = enabled,
+                onClick = onConvertToImage,
+                modifier = Modifier.weight(1f),
+            )
+            ReaderActionItem(
+                icon = Icons.Outlined.DeleteSweep,
+                label = stringResource(R.string.reader_action_delete_pages),
+                contentDescription = stringResource(R.string.reader_delete_pages),
+                enabled = enabled,
+                onClick = onDeletePages,
+                modifier = Modifier.weight(1f),
+            )
+            ReaderActionItem(
+                icon = Icons.Outlined.Delete,
+                label = stringResource(R.string.reader_action_delete),
+                contentDescription = stringResource(R.string.reader_delete),
+                enabled = enabled,
+                onClick = onDeletePdf,
+                tint = MaterialTheme.colorScheme.error,
+                labelColor = MaterialTheme.colorScheme.error,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReaderActionItem(
+    icon: ImageVector,
+    label: String,
+    contentDescription: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    labelColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
+    val disabledAlpha = 0.38f
+    val iconTint = if (enabled) tint else tint.copy(alpha = disabledAlpha)
+    val textColor = if (enabled) labelColor else labelColor.copy(alpha = disabledAlpha)
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = iconTint,
+            modifier = Modifier.size(24.dp),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

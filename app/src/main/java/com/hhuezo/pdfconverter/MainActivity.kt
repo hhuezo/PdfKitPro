@@ -34,7 +34,6 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +67,7 @@ import com.hhuezo.pdfconverter.ui.merge.PdfMergeScreen
 import com.hhuezo.pdfconverter.ui.reader.PdfReaderScreen
 import com.hhuezo.pdfconverter.ui.scan.PdfScanScreen
 import com.hhuezo.pdfconverter.ui.sign.PdfSignScreen
+import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
 import com.hhuezo.pdfconverter.ui.theme.Primary
 import com.hhuezo.pdfconverter.ui.theme.PrimaryFixed
@@ -533,10 +533,7 @@ private fun MainTopAppBar() {
                 )
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = Color.White,
-        ),
+        colors = androsTopAppBarColors(),
     )
 }
 

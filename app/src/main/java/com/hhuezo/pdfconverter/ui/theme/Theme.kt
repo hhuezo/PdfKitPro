@@ -1,6 +1,9 @@
 package com.hhuezo.pdfconverter.ui.theme
 
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
@@ -53,3 +56,14 @@ fun AndrosTheme(content: @Composable () -> Unit) {
 /** Alias for compatibility with generated previews / older references. */
 @Composable
 fun PdfConverterTheme(content: @Composable () -> Unit) = AndrosTheme(content = content)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun androsTopAppBarColors(): TopAppBarColors =
+    TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.primary,
+        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+        actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+        scrolledContainerColor = MaterialTheme.colorScheme.primary,
+    )

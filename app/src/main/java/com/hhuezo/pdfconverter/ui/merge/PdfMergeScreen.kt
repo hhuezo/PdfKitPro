@@ -49,7 +49,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -76,6 +75,7 @@ import androidx.core.content.FileProvider
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.data.RecentPdfsRepository
 import com.hhuezo.pdfconverter.pdf.PdfMerger
+import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.PrimaryFixedDim
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.formatFileSize
@@ -319,7 +319,7 @@ fun PdfMergeScreen(
                                     totalPages,
                                 ),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             )
                         }
                     }
@@ -343,9 +343,7 @@ fun PdfMergeScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                colors = androsTopAppBarColors(),
             )
         },
         bottomBar = {

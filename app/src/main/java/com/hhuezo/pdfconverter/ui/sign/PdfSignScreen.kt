@@ -58,7 +58,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -89,6 +88,7 @@ import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
 import com.hhuezo.pdfconverter.pdf.PdfSigner
 import com.hhuezo.pdfconverter.pdf.PdfStampOverlay
+import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.Primary
 import com.hhuezo.pdfconverter.ui.theme.PrimaryContainer
 import com.hhuezo.pdfconverter.util.PdfFileSaver
@@ -289,7 +289,6 @@ fun PdfSignScreen(
                 title = {
                     Text(
                         text = stringResource(R.string.sign_title),
-                        color = Primary,
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.titleLarge,
                     )
@@ -299,13 +298,10 @@ fun PdfSignScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.reader_back),
-                            tint = Color(0xFF5B403D),
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF7F9FB),
-                ),
+                colors = androsTopAppBarColors(),
             )
         },
         bottomBar = {

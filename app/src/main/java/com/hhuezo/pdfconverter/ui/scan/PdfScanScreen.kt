@@ -53,7 +53,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -79,6 +78,7 @@ import androidx.core.content.FileProvider
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.ImagesToPdf
 import com.hhuezo.pdfconverter.util.PdfFileSaver
@@ -325,7 +325,7 @@ fun PdfScanScreen(
                             Text(
                                 text = stringResource(R.string.scan_pages_meta, pagePaths.size),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             )
                         }
                     }
@@ -338,9 +338,7 @@ fun PdfScanScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                colors = androsTopAppBarColors(),
             )
         },
         bottomBar = {

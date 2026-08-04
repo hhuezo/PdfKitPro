@@ -16,13 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,31 +52,21 @@ fun HomeScreen(
     onOpenPdf: () -> Unit = {},
     onViewAllRecent: () -> Unit = {},
     onRecentFileClick: (RecentPdfFile) -> Unit = {},
-    onRecentFileMore: (RecentPdfFile) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            end = 16.dp,
-            top = 24.dp,
-            bottom = 24.dp,
-        ),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(start = 16.dp, end = 16.dp, top = 24.dp),
     ) {
-        item {
-            OpenPdfHero(onClick = onOpenPdf)
-        }
-
-        item {
-            RecentFilesSection(
-                files = recentFiles,
-                onViewAll = onViewAllRecent,
-                onFileClick = onRecentFileClick,
-                onFileMore = onRecentFileMore,
-            )
-        }
+        OpenPdfHero(onClick = onOpenPdf)
+        Spacer(modifier = Modifier.height(24.dp))
+        RecentFilesSection(
+            files = recentFiles,
+            onViewAll = onViewAllRecent,
+            onFileClick = onRecentFileClick,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -144,9 +133,9 @@ private fun RecentFilesSection(
     files: List<RecentPdfFile>,
     onViewAll: () -> Unit,
     onFileClick: (RecentPdfFile) -> Unit,
-    onFileMore: (RecentPdfFile) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column {
+    Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -172,12 +161,15 @@ private fun RecentFilesSection(
         if (files.isEmpty()) {
             EmptyRecentFiles()
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                files.forEach { file ->
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(files, key = { it.id }) { file ->
                     RecentFileRow(
                         file = file,
                         onClick = { onFileClick(file) },
-                        onMoreClick = { onFileMore(file) },
                     )
                 }
             }
@@ -220,7 +212,6 @@ private fun EmptyRecentFiles() {
 fun RecentFileRow(
     file: RecentPdfFile,
     onClick: () -> Unit,
-    onMoreClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -263,13 +254,6 @@ fun RecentFileRow(
                 text = file.meta,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            )
-        }
-        IconButton(onClick = onMoreClick) {
-            Icon(
-                imageVector = Icons.Outlined.MoreVert,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

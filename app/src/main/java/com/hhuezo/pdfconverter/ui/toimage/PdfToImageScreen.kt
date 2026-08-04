@@ -57,7 +57,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -83,6 +82,7 @@ import com.hhuezo.pdfconverter.pdf.ImageExportFormat
 import com.hhuezo.pdfconverter.pdf.PdfToImageConverter
 import com.hhuezo.pdfconverter.pdf.countPagesInRange
 import com.hhuezo.pdfconverter.pdf.parsePageRange
+import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.PrimaryFixedDim
 import com.hhuezo.pdfconverter.ui.theme.SecondaryContainer
 import com.hhuezo.pdfconverter.ui.theme.SecondaryFixed
@@ -200,7 +200,6 @@ fun PdfToImageScreen(
                         text = stringResource(R.string.to_image_title),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
                     )
                 },
                 navigationIcon = {
@@ -208,13 +207,10 @@ fun PdfToImageScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.reader_back),
-                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                colors = androsTopAppBarColors(),
             )
         },
         bottomBar = {
