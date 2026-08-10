@@ -686,21 +686,21 @@ private fun RotatePageCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RotationActionButton(
-                    label = stringResource(R.string.rotate_pages_ccw_short),
+                    contentDescription = stringResource(R.string.rotate_pages_ccw),
                     icon = Icons.Outlined.Rotate90DegreesCcw,
                     onClick = onRotateCcw,
                     enabled = enabled,
                     modifier = Modifier.weight(1f),
                 )
                 RotationActionButton(
-                    label = stringResource(R.string.rotate_pages_cw_short),
+                    contentDescription = stringResource(R.string.rotate_pages_cw),
                     icon = Icons.Outlined.Rotate90DegreesCw,
                     onClick = onRotateCw,
                     enabled = enabled,
                     modifier = Modifier.weight(1f),
                 )
                 RotationActionButton(
-                    label = stringResource(R.string.rotate_pages_180_short),
+                    contentDescription = stringResource(R.string.rotate_pages_180),
                     icon = Icons.Outlined.SwapVert,
                     onClick = onRotate180,
                     enabled = enabled,
@@ -733,7 +733,7 @@ private fun RotatePageCard(
 
 @Composable
 private fun RotationActionButton(
-    label: String,
+    contentDescription: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
     enabled: Boolean,
@@ -750,25 +750,13 @@ private fun RotationActionButton(
             disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(0.dp),
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(22.dp),
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(24.dp),
+        )
     }
 }
 
