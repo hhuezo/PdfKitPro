@@ -223,10 +223,18 @@ fun AndrosApp(
         }
     }
 
+    val showingReader = readerUri != null &&
+        signPdfUri == null &&
+        convertToImageUri == null &&
+        deletePagesUri == null &&
+        reorderPagesUri == null &&
+        rotatePagesUri == null &&
+        !mergeActive &&
+        !scanActive
+
     val activity = context as? ComponentActivity
-    DisposableEffect(readerUri != null) {
-        val isReading = readerUri != null
-        activity?.requestedOrientation = if (isReading) {
+    DisposableEffect(showingReader) {
+        activity?.requestedOrientation = if (showingReader) {
             ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
         } else {
             ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -634,22 +642,10 @@ fun AndrosApp(
                 }
             },
             onConvertToImage = { convertToImageUri = activeUri },
-            onSignPdf = {
-                signPdfUri = activeUri
-                readerUri = null
-            },
-            onDeletePages = {
-                deletePagesUri = activeUri
-                readerUri = null
-            },
-            onReorderPages = {
-                reorderPagesUri = activeUri
-                readerUri = null
-            },
-            onRotatePages = {
-                rotatePagesUri = activeUri
-                readerUri = null
-            },
+            onSignPdf = { signPdfUri = activeUri },
+            onDeletePages = { deletePagesUri = activeUri },
+            onReorderPages = { reorderPagesUri = activeUri },
+            onRotatePages = { rotatePagesUri = activeUri },
         )
         return
     }

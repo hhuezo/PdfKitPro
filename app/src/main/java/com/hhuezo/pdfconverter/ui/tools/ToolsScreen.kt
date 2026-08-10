@@ -5,10 +5,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -96,26 +99,6 @@ fun ToolsScreen(
 ) {
     val tools = listOf(
         QuickTool(
-            titleRes = R.string.pdf_to_image,
-            subtitleRes = R.string.pdf_to_image_subtitle,
-            icon = Icons.Outlined.Image,
-            cardBackground = ImageCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = ImageIconTint,
-            titleColor = ImageText,
-            subtitleColor = ImageText.copy(alpha = 0.72f),
-        ) to QuickToolId.ToImage,
-        QuickTool(
-            titleRes = R.string.delete_pages,
-            subtitleRes = R.string.delete_pages_subtitle,
-            icon = Icons.Outlined.DeleteSweep,
-            cardBackground = DeleteCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = DeleteIconTint,
-            titleColor = DeleteText,
-            subtitleColor = DeleteText.copy(alpha = 0.72f),
-        ) to QuickToolId.DeletePages,
-        QuickTool(
             titleRes = R.string.reorder_pages,
             subtitleRes = R.string.reorder_pages_subtitle,
             icon = Icons.Outlined.Reorder,
@@ -165,6 +148,26 @@ fun ToolsScreen(
             titleColor = SignText,
             subtitleColor = SignText.copy(alpha = 0.72f),
         ) to QuickToolId.Sign,
+        QuickTool(
+            titleRes = R.string.pdf_to_image,
+            subtitleRes = R.string.pdf_to_image_subtitle,
+            icon = Icons.Outlined.Image,
+            cardBackground = ImageCardBg,
+            iconBackground = Color.White.copy(alpha = 0.9f),
+            iconTint = ImageIconTint,
+            titleColor = ImageText,
+            subtitleColor = ImageText.copy(alpha = 0.72f),
+        ) to QuickToolId.ToImage,
+        QuickTool(
+            titleRes = R.string.delete_pages,
+            subtitleRes = R.string.delete_pages_subtitle,
+            icon = Icons.Outlined.DeleteSweep,
+            cardBackground = DeleteCardBg,
+            iconBackground = Color.White.copy(alpha = 0.9f),
+            iconTint = DeleteIconTint,
+            titleColor = DeleteText,
+            subtitleColor = DeleteText.copy(alpha = 0.72f),
+        ) to QuickToolId.DeletePages,
     )
 
     Column(
@@ -175,15 +178,22 @@ fun ToolsScreen(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             tools.chunked(2).forEach { row ->
+                // Solo la pareja de Reordenar (descripción en 2 líneas) reserva ese alto.
+                val subtitleMinLines = if (row.any { it.second == QuickToolId.ReorderPages }) 2 else 1
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     row.forEach { (tool, id) ->
                         ToolCard(
                             tool = tool,
                             onClick = { onToolClick(id) },
-                            modifier = Modifier.weight(1f),
+                            subtitleMinLines = subtitleMinLines,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                         )
                     }
                     if (row.size == 1) {
@@ -199,6 +209,7 @@ fun ToolsScreen(
 private fun ToolCard(
     tool: QuickTool,
     onClick: () -> Unit,
+    subtitleMinLines: Int = 1,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -233,6 +244,7 @@ private fun ToolCard(
                 text = stringResource(tool.subtitleRes),
                 style = MaterialTheme.typography.labelSmall,
                 color = tool.subtitleColor,
+                minLines = subtitleMinLines,
             )
         }
     }
