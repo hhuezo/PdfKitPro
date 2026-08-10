@@ -154,6 +154,26 @@
     <string name="nav_recent">Recientes</string>
     <string name="nav_tools">Herramientas</string>
     <string name="settings">Configuración</string>
+
+    <!-- Acerca de -->
+    <string name="about_title">Acerca de</string>
+    <string name="about_open">Acerca de la app</string>
+    <string name="about_version">Versión %1$s (Build %2$d)</string>
+    <string name="about_version_unknown">Versión desconocida</string>
+    <string name="about_developer_section">Desarrollado por</string>
+    <string name="about_developer_name">Hugo Alexander Huezo Barahona</string>
+    <string name="about_developer_role">Desarrollador Full Stack</string>
+    <string name="about_github">GitHub</string>
+    <string name="about_linkedin">LinkedIn</string>
+    <string name="about_thanks_section">Agradecimientos</string>
+    <string name="about_thanks_body">PdfKit Pro es posible gracias a estos proyectos de código abierto:</string>
+    <string name="about_license">Licencia</string>
+    <string name="about_oss_compose">Jetpack Compose</string>
+    <string name="about_oss_pdfbox">PdfBox Android</string>
+    <string name="about_oss_mlkit">ML Kit Document Scanner</string>
+    <string name="about_oss_datastore">AndroidX DataStore</string>
+    <string name="about_oss_kotlin">Kotlin</string>
+    <string name="about_copyright">© 2026 PdfKit Pro. Todos los derechos reservados.</string>
     <string name="no_recent_files">Aún no hay archivos recientes</string>
     <string name="no_recent_files_hint">Abre un PDF para verlo aquí</string>
     <string name="recent_remove">Quitar de recientes</string>

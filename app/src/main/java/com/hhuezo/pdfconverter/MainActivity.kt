@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -71,6 +72,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hhuezo.pdfconverter.data.RecentPdf
 import com.hhuezo.pdfconverter.data.RecentPdfsRepository
+import com.hhuezo.pdfconverter.ui.about.AboutScreen
 import com.hhuezo.pdfconverter.ui.deletepages.PdfDeletePagesScreen
 import com.hhuezo.pdfconverter.ui.reorder.PdfReorderPagesScreen
 import com.hhuezo.pdfconverter.ui.rotate.PdfRotatePagesScreen
@@ -207,6 +209,7 @@ fun AndrosApp(
     var rotatePagesUri by rememberSaveable { mutableStateOf<String?>(null) }
     var mergeActive by rememberSaveable { mutableStateOf(false) }
     var scanActive by rememberSaveable { mutableStateOf(false) }
+    var aboutActive by rememberSaveable { mutableStateOf(false) }
     var startupPermissionsAsked by rememberSaveable { mutableStateOf(false) }
     var missingRecentPdf by remember { mutableStateOf<RecentPdf?>(null) }
 
@@ -230,7 +233,8 @@ fun AndrosApp(
         reorderPagesUri == null &&
         rotatePagesUri == null &&
         !mergeActive &&
-        !scanActive
+        !scanActive &&
+        !aboutActive
 
     val activity = context as? ComponentActivity
     DisposableEffect(showingReader) {
@@ -263,6 +267,7 @@ fun AndrosApp(
             rotatePagesUri = null
             mergeActive = false
             scanActive = false
+            aboutActive = false
             readerName = info.displayName
             readerInitialPage = page
             readerUri = uriString
@@ -284,6 +289,7 @@ fun AndrosApp(
             rotatePagesUri = null
             mergeActive = false
             scanActive = false
+            aboutActive = false
             readerUri = null
             convertToImageUri = uri.toString()
         }
@@ -304,6 +310,7 @@ fun AndrosApp(
             rotatePagesUri = null
             mergeActive = false
             scanActive = false
+            aboutActive = false
             readerUri = null
             signPdfUri = uri.toString()
         }
@@ -322,6 +329,7 @@ fun AndrosApp(
             convertToImageUri = null
             mergeActive = false
             scanActive = false
+            aboutActive = false
             readerUri = null
             reorderPagesUri = null
             rotatePagesUri = null
@@ -342,6 +350,7 @@ fun AndrosApp(
             convertToImageUri = null
             mergeActive = false
             scanActive = false
+            aboutActive = false
             readerUri = null
             deletePagesUri = null
             rotatePagesUri = null
@@ -362,6 +371,7 @@ fun AndrosApp(
             convertToImageUri = null
             mergeActive = false
             scanActive = false
+            aboutActive = false
             readerUri = null
             deletePagesUri = null
             reorderPagesUri = null
@@ -377,6 +387,7 @@ fun AndrosApp(
         rotatePagesUri = null
         readerUri = null
         scanActive = false
+        aboutActive = false
         mergeActive = true
     }
 
@@ -388,7 +399,20 @@ fun AndrosApp(
         rotatePagesUri = null
         readerUri = null
         mergeActive = false
+        aboutActive = false
         scanActive = true
+    }
+
+    fun openAbout() {
+        signPdfUri = null
+        convertToImageUri = null
+        deletePagesUri = null
+        reorderPagesUri = null
+        rotatePagesUri = null
+        readerUri = null
+        mergeActive = false
+        scanActive = false
+        aboutActive = true
     }
 
     LaunchedEffect(externalPdfUri) {
@@ -524,6 +548,7 @@ fun AndrosApp(
 
     fun navigateBack() {
         when {
+            aboutActive -> aboutActive = false
             signPdfUri != null -> signPdfUri = null
             mergeActive -> mergeActive = false
             scanActive -> scanActive = false
@@ -568,6 +593,11 @@ fun AndrosApp(
                 }
             },
         )
+    }
+
+    if (aboutActive) {
+        AboutScreen(onBack = ::navigateBack)
+        return
     }
 
     val activeSignUri = signPdfUri
@@ -654,7 +684,7 @@ fun AndrosApp(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            MainTopAppBar()
+            MainTopAppBar(onAboutClick = ::openAbout)
         },
         bottomBar = {
             AndrosBottomBar(
@@ -724,7 +754,7 @@ private fun android.content.Context.findActivity(): Activity? {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MainTopAppBar() {
+private fun MainTopAppBar(onAboutClick: () -> Unit) {
     TopAppBar(
         title = {
             Text(
@@ -733,6 +763,15 @@ private fun MainTopAppBar() {
                 color = Color.White,
                 fontWeight = FontWeight.SemiBold,
             )
+        },
+        actions = {
+            IconButton(onClick = onAboutClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = stringResource(R.string.about_open),
+                    tint = Color.White,
+                )
+            }
         },
         colors = androsTopAppBarColors(),
     )
