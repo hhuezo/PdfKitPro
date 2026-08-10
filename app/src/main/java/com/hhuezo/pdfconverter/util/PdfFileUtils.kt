@@ -40,13 +40,22 @@ fun Context.isPdfUriAccessible(uri: Uri): Boolean {
 }
 
 fun Context.takePersistableReadPermission(uri: Uri, intentFlags: Int = 0) {
-    val flags = (intentFlags and (
+    val requested = intentFlags and (
         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        )).let { granted ->
-        if (granted != 0) granted else Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+    val flags = if (requested != 0) {
+        requested
+    } else {
+        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
     }
     runCatching {
         contentResolver.takePersistableUriPermission(uri, flags)
+    }.recoverCatching {
+        // Some providers reject write; keep at least durable read access.
+        contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION,
+        )
     }
 }
 

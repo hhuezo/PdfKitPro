@@ -8,6 +8,12 @@ import android.os.Environment
 import android.provider.MediaStore
 import java.io.File
 
+enum class PdfSaveOutcome {
+    Overwritten,
+    SavedAsCopy,
+    Failed,
+}
+
 object PdfFileSaver {
 
     /**
@@ -49,5 +55,54 @@ object PdfFileSaver {
             resolver.delete(uri, null, null)
             null
         }
+    }
+
+    fun canWriteUri(context: Context, uri: Uri): Boolean {
+        val resolver = context.contentResolver
+        val persistedWrite = resolver.persistedUriPermissions.any { permission ->
+            permission.uri == uri && permission.isWritePermission
+        }
+        if (persistedWrite) return true
+        return runCatching {
+            resolver.openFileDescriptor(uri, "wt")?.use { true } == true
+        }.getOrDefault(false)
+    }
+
+    /**
+     * Overwrites [targetUri] with the contents of [source].
+     * Requires write access from the document provider.
+     */
+    fun overwriteUri(context: Context, targetUri: Uri, source: File): Boolean {
+        return runCatching {
+            context.contentResolver.openOutputStream(targetUri, "wt")?.use { output ->
+                source.inputStream().use { input -> input.copyTo(output) }
+            } != null
+        }.getOrDefault(false)
+    }
+
+    /**
+     * Tries to overwrite [originalUri]. If that fails, saves a copy to Downloads.
+     */
+    fun saveOverwritingOrCopy(
+        context: Context,
+        originalUri: Uri?,
+        source: File,
+        fallbackDisplayName: String,
+    ): PdfSaveOutcome {
+        if (originalUri != null && canWriteUri(context, originalUri)) {
+            if (overwriteUri(context, originalUri, source)) {
+                return PdfSaveOutcome.Overwritten
+            }
+        }
+        val copyUri = saveToDownloads(context, source, fallbackDisplayName)
+        return if (copyUri != null) PdfSaveOutcome.SavedAsCopy else PdfSaveOutcome.Failed
+    }
+
+    fun writeToUri(context: Context, targetUri: Uri, source: File): Boolean {
+        return runCatching {
+            context.contentResolver.openOutputStream(targetUri)?.use { output ->
+                source.inputStream().use { input -> input.copyTo(output) }
+            } != null
+        }.getOrDefault(false)
     }
 }

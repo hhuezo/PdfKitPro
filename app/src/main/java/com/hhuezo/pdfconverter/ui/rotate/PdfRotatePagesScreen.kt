@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Rotate90DegreesCcw
 import androidx.compose.material.icons.outlined.Rotate90DegreesCw
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.Button
@@ -82,6 +83,7 @@ import com.hhuezo.pdfconverter.pdf.PdfPageRotator
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.util.PdfFileSaver
+import com.hhuezo.pdfconverter.util.PdfSaveOutcome
 import com.hhuezo.pdfconverter.util.queryPdfInfo
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -163,6 +165,32 @@ fun PdfRotatePagesScreen(
         }
     }
 
+    fun saveResult(file: File) {
+        scope.launch {
+            val outcome = withContext(Dispatchers.IO) {
+                val baseName = fileInfo.displayName.removeSuffix(".pdf").removeSuffix(".PDF")
+                PdfFileSaver.saveOverwritingOrCopy(
+                    context = context,
+                    originalUri = uri,
+                    source = file,
+                    fallbackDisplayName = "${baseName}_rotado.pdf",
+                )
+            }
+            val message = when (outcome) {
+                PdfSaveOutcome.Overwritten -> {
+                    savedToDownloads = false
+                    R.string.action_save_original_success
+                }
+                PdfSaveOutcome.SavedAsCopy -> {
+                    savedToDownloads = true
+                    R.string.action_save_copy_success
+                }
+                PdfSaveOutcome.Failed -> R.string.action_save_error
+            }
+            snackbar.showSnackbar(context.getString(message))
+        }
+    }
+
     val storagePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -188,6 +216,11 @@ fun PdfRotatePagesScreen(
         } else {
             storagePermissionLauncher.launch(permission)
         }
+    }
+
+    fun requestSave() {
+        val file = outputFile ?: return
+        saveResult(file)
     }
 
     fun adjustPageRotation(pageIndex: Int, delta: Int) {
@@ -249,20 +282,6 @@ fun PdfRotatePagesScreen(
                             rotatedCount = modifiedCount
                             totalPageCount = pages
                             uiState = RotateUiState.Ready
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                downloadResult(file)
-                            } else {
-                                val permission = Manifest.permission.WRITE_EXTERNAL_STORAGE
-                                if (ContextCompat.checkSelfPermission(
-                                        context,
-                                        permission,
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    downloadResult(file)
-                                } else {
-                                    storagePermissionLauncher.launch(permission)
-                                }
-                            }
                         },
                         onFailure = {
                             uiState = RotateUiState.Idle
@@ -353,6 +372,17 @@ fun PdfRotatePagesScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
+                            Button(
+                                onClick = { requestSave() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(50),
+                            ) {
+                                Icon(Icons.Outlined.Save, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.action_save))
+                            }
                             OutlinedButton(
                                 onClick = { outputFile?.let { sharePdf(context, it) } },
                                 modifier = Modifier
@@ -364,17 +394,17 @@ fun PdfRotatePagesScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(stringResource(R.string.rotate_pages_share))
                             }
-                            Button(
-                                onClick = { requestDownload() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(50),
-                            ) {
-                                Icon(Icons.Outlined.Download, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.rotate_pages_download))
-                            }
+                        }
+                        Button(
+                            onClick = { requestDownload() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Icon(Icons.Outlined.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.rotate_pages_download))
                         }
                     }
                 } else {

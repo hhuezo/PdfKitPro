@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.OpenInFull
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.Button
@@ -246,6 +247,17 @@ fun PdfToImageScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
+                            Button(
+                                onClick = { requestDownload() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(50),
+                            ) {
+                                Icon(Icons.Outlined.Save, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.action_save))
+                            }
                             OutlinedButton(
                                 onClick = { shareImages(context, outputFiles) },
                                 modifier = Modifier
@@ -257,17 +269,17 @@ fun PdfToImageScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(stringResource(R.string.to_image_share))
                             }
-                            Button(
-                                onClick = { requestDownload() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(50),
-                            ) {
-                                Icon(Icons.Outlined.Download, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.to_image_download))
-                            }
+                        }
+                        Button(
+                            onClick = { requestDownload() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Icon(Icons.Outlined.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.to_image_download))
                         }
                     }
                 } else {

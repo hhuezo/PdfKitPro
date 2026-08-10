@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -235,6 +236,23 @@ fun PdfScanScreen(
         }
     }
 
+    val createDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { destUri ->
+        val file = outputFile
+        if (destUri == null || file == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val saved = withContext(Dispatchers.IO) {
+                PdfFileSaver.writeToUri(context, destUri, file)
+            }
+            snackbar.showSnackbar(
+                context.getString(
+                    if (saved) R.string.action_save_as_success else R.string.action_save_error,
+                ),
+            )
+        }
+    }
+
     val storagePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -260,6 +278,10 @@ fun PdfScanScreen(
         } else {
             storagePermissionLauncher.launch(permission)
         }
+    }
+
+    fun requestSave() {
+        createDocumentLauncher.launch("escaneado_${System.currentTimeMillis()}.pdf")
     }
 
     fun movePage(from: Int, to: Int) {
@@ -377,6 +399,17 @@ fun PdfScanScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
+                            Button(
+                                onClick = { requestSave() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(50),
+                            ) {
+                                Icon(Icons.Outlined.Save, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.action_save))
+                            }
                             OutlinedButton(
                                 onClick = { outputFile?.let { sharePdf(context, it) } },
                                 modifier = Modifier
@@ -388,17 +421,17 @@ fun PdfScanScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(stringResource(R.string.scan_share))
                             }
-                            Button(
-                                onClick = { requestDownload() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(50),
-                            ) {
-                                Icon(Icons.Outlined.Download, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.scan_download))
-                            }
+                        }
+                        Button(
+                            onClick = { requestDownload() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Icon(Icons.Outlined.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.scan_download))
                         }
                     } else {
                         Row(

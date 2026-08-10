@@ -88,6 +88,7 @@ import com.hhuezo.pdfconverter.ui.theme.PrimaryFixed
 import com.hhuezo.pdfconverter.ui.toimage.PdfToImageScreen
 import com.hhuezo.pdfconverter.ui.tools.QuickToolId
 import com.hhuezo.pdfconverter.ui.tools.ToolsScreen
+import com.hhuezo.pdfconverter.util.OpenWritablePdfDocument
 import com.hhuezo.pdfconverter.util.formatFileSize
 import com.hhuezo.pdfconverter.util.formatRecentDate
 import com.hhuezo.pdfconverter.util.isPdfUriAccessible
@@ -385,33 +386,63 @@ fun AndrosApp(
     }
 
     val pickPdf = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
+        contract = OpenWritablePdfDocument(),
     ) { uri ->
-        uri?.let { openUri(it) }
+        uri?.let {
+            openUri(
+                it,
+                intentFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
     }
 
     val pickPdfForImage = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
+        contract = OpenWritablePdfDocument(),
     ) { uri ->
-        uri?.let { openForImageConversion(it) }
+        uri?.let {
+            openForImageConversion(
+                it,
+                intentFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
     }
 
     val pickPdfForSign = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
+        contract = OpenWritablePdfDocument(),
     ) { uri ->
-        uri?.let { openForSigning(it) }
+        uri?.let {
+            openForSigning(
+                it,
+                intentFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
     }
 
     val pickPdfForDeletePages = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
+        contract = OpenWritablePdfDocument(),
     ) { uri ->
-        uri?.let { openForDeletePages(it) }
+        uri?.let {
+            openForDeletePages(
+                it,
+                intentFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
     }
 
     val pickPdfForRotatePages = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
+        contract = OpenWritablePdfDocument(),
     ) { uri ->
-        uri?.let { openForRotatePages(it) }
+        uri?.let {
+            openForRotatePages(
+                it,
+                intentFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
     }
 
     fun launchPicker() {

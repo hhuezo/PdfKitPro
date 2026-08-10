@@ -28,7 +28,7 @@
     <string name="delete_pages_unmark">Quitar marca</string>
     <string name="delete_pages_to_remove">A eliminar</string>
     <string name="delete_pages_remaining">Quedarán</string>
-    <string name="delete_pages_info">Debes dejar al menos una página. El PDF original no se modifica; se crea un archivo nuevo.</string>
+    <string name="delete_pages_info">Debes dejar al menos una página. Puedes guardar sobre el archivo original o descargar una copia.</string>
     <string name="delete_pages_single_page">Este PDF solo tiene una página; no se puede eliminar.</string>
     <string name="delete_pages_action">Eliminar páginas</string>
     <string name="delete_pages_action_count">Eliminar %1$d páginas</string>
@@ -139,6 +139,11 @@
     <string name="coming_soon">Próximamente</string>
 
     <!-- Firmar PDF -->
+    <string name="action_save">Guardar</string>
+    <string name="action_save_original_success">Archivo original actualizado</string>
+    <string name="action_save_copy_success">No se pudo editar el original; se guardó una copia en Descargas/PdfKit Pro</string>
+    <string name="action_save_as_success">Archivo guardado</string>
+    <string name="action_save_error">No se pudo guardar el archivo</string>
     <string name="sign_title">Firmar PDF</string>
     <string name="sign_finish_save">Finalizar</string>
     <string name="sign_ready_title">¿Qué deseas hacer?</string>

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -220,6 +221,23 @@ fun PdfMergeScreen(
         }
     }
 
+    val createDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { destUri ->
+        val file = outputFile
+        if (destUri == null || file == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val saved = withContext(Dispatchers.IO) {
+                PdfFileSaver.writeToUri(context, destUri, file)
+            }
+            snackbar.showSnackbar(
+                context.getString(
+                    if (saved) R.string.action_save_as_success else R.string.action_save_error,
+                ),
+            )
+        }
+    }
+
     val storagePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -245,6 +263,10 @@ fun PdfMergeScreen(
         } else {
             storagePermissionLauncher.launch(permission)
         }
+    }
+
+    fun requestSave() {
+        createDocumentLauncher.launch("unido_${System.currentTimeMillis()}.pdf")
     }
 
     fun moveItem(from: Int, to: Int) {
@@ -382,6 +404,17 @@ fun PdfMergeScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
+                            Button(
+                                onClick = { requestSave() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(50),
+                            ) {
+                                Icon(Icons.Outlined.Save, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.action_save))
+                            }
                             OutlinedButton(
                                 onClick = { outputFile?.let { sharePdf(context, it) } },
                                 modifier = Modifier
@@ -393,17 +426,17 @@ fun PdfMergeScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(stringResource(R.string.merge_share))
                             }
-                            Button(
-                                onClick = { requestDownload() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(50),
-                            ) {
-                                Icon(Icons.Outlined.Download, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.merge_download))
-                            }
+                        }
+                        Button(
+                            onClick = { requestDownload() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Icon(Icons.Outlined.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.merge_download))
                         }
                     }
                 } else {

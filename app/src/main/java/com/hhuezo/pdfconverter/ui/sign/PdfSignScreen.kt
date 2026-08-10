@@ -42,6 +42,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Title
 import androidx.compose.material.icons.outlined.ZoomIn
@@ -108,6 +109,7 @@ import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.ui.theme.Primary
 import com.hhuezo.pdfconverter.ui.theme.PrimaryContainer
 import com.hhuezo.pdfconverter.util.PdfFileSaver
+import com.hhuezo.pdfconverter.util.PdfSaveOutcome
 import com.hhuezo.pdfconverter.util.queryPdfInfo
 import java.io.File
 import java.text.SimpleDateFormat
@@ -353,6 +355,26 @@ fun PdfSignScreen(
         }
     }
 
+    fun saveSignedPdf(file: File) {
+        scope.launch {
+            val outcome = withContext(Dispatchers.IO) {
+                val baseName = fileInfo.displayName.removeSuffix(".pdf").removeSuffix(".PDF")
+                PdfFileSaver.saveOverwritingOrCopy(
+                    context = context,
+                    originalUri = uri,
+                    source = file,
+                    fallbackDisplayName = "${baseName}_firmado.pdf",
+                )
+            }
+            val message = when (outcome) {
+                PdfSaveOutcome.Overwritten -> R.string.action_save_original_success
+                PdfSaveOutcome.SavedAsCopy -> R.string.action_save_copy_success
+                PdfSaveOutcome.Failed -> R.string.action_save_error
+            }
+            snackbar.showSnackbar(context.getString(message))
+        }
+    }
+
     fun finalizeAndSave() {
         val currentOverlays = overlays
         if (currentOverlays.isEmpty()) {
@@ -501,6 +523,19 @@ fun PdfSignScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
+                                Button(
+                                    onClick = { file?.let(::saveSignedPdf) },
+                                    enabled = file != null,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(52.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                                ) {
+                                    Icon(Icons.Outlined.Save, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(stringResource(R.string.action_save))
+                                }
                                 OutlinedButton(
                                     onClick = { file?.let(::shareSignedPdf) },
                                     enabled = file != null,
@@ -513,19 +548,22 @@ fun PdfSignScreen(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(stringResource(R.string.sign_share))
                                 }
-                                Button(
-                                    onClick = { file?.let(::downloadSignedPdf) },
-                                    enabled = file != null,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(52.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                                ) {
-                                    Icon(Icons.Outlined.Download, contentDescription = null)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(stringResource(R.string.sign_download))
-                                }
+                            }
+                            Button(
+                                onClick = { file?.let(::downloadSignedPdf) },
+                                enabled = file != null,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PrimaryContainer,
+                                    contentColor = Color.White,
+                                ),
+                            ) {
+                                Icon(Icons.Outlined.Download, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.sign_download))
                             }
                         }
                     }

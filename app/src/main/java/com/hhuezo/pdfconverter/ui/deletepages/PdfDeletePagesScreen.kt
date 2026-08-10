@@ -33,9 +33,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DeleteSweep
-import androidx.compose.material.icons.outlined.FilterNone
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.FilterNone
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -82,6 +83,7 @@ import com.hhuezo.pdfconverter.pdf.PdfBlankPageDetector
 import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
 import com.hhuezo.pdfconverter.pdf.PdfPageRemover
 import com.hhuezo.pdfconverter.util.PdfFileSaver
+import com.hhuezo.pdfconverter.util.PdfSaveOutcome
 import com.hhuezo.pdfconverter.util.queryPdfInfo
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -147,6 +149,26 @@ fun PdfDeletePagesScreen(
         }
     }
 
+    fun saveResult(file: File) {
+        scope.launch {
+            val outcome = withContext(Dispatchers.IO) {
+                val baseName = fileInfo.displayName.removeSuffix(".pdf").removeSuffix(".PDF")
+                PdfFileSaver.saveOverwritingOrCopy(
+                    context = context,
+                    originalUri = uri,
+                    source = file,
+                    fallbackDisplayName = "${baseName}_sin_paginas.pdf",
+                )
+            }
+            val message = when (outcome) {
+                PdfSaveOutcome.Overwritten -> R.string.action_save_original_success
+                PdfSaveOutcome.SavedAsCopy -> R.string.action_save_copy_success
+                PdfSaveOutcome.Failed -> R.string.action_save_error
+            }
+            snackbar.showSnackbar(context.getString(message))
+        }
+    }
+
     val storagePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -172,6 +194,11 @@ fun PdfDeletePagesScreen(
         } else {
             storagePermissionLauncher.launch(permission)
         }
+    }
+
+    fun requestSave() {
+        val file = outputFile ?: return
+        saveResult(file)
     }
 
     fun togglePage(pageIndex: Int) {
@@ -360,6 +387,17 @@ fun PdfDeletePagesScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
+                            Button(
+                                onClick = { requestSave() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(50),
+                            ) {
+                                Icon(Icons.Outlined.Save, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.action_save))
+                            }
                             OutlinedButton(
                                 onClick = { outputFile?.let { sharePdf(context, it) } },
                                 modifier = Modifier
@@ -371,17 +409,17 @@ fun PdfDeletePagesScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(stringResource(R.string.delete_pages_share))
                             }
-                            Button(
-                                onClick = { requestDownload() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(52.dp),
-                                shape = RoundedCornerShape(50),
-                            ) {
-                                Icon(Icons.Outlined.Download, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.delete_pages_download))
-                            }
+                        }
+                        Button(
+                            onClick = { requestDownload() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Icon(Icons.Outlined.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.delete_pages_download))
                         }
                     }
                 } else {
