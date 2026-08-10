@@ -226,11 +226,13 @@
     <string name="reader_convert_to_image">Convertir a imagen</string>
     <string name="reader_sign">Firmar PDF</string>
     <string name="reader_delete_pages">Eliminar páginas</string>
+    <string name="reader_reorder_pages">Reordenar páginas</string>
     <string name="reader_rotate_pages">Rotar páginas</string>
     <string name="reader_more">Más opciones</string>
     <string name="reader_action_sign">Firmar</string>
     <string name="reader_action_image">Imagen</string>
     <string name="reader_action_delete_pages">Páginas</string>
+    <string name="reader_action_reorder">Reordenar</string>
     <string name="reader_action_rotate">Rotar</string>
     <string name="reader_actions_hide">Ocultar opciones</string>
     <string name="reader_actions_show">Mostrar opciones</string>

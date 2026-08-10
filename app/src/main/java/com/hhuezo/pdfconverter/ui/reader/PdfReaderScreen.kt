@@ -46,6 +46,7 @@ import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FindInPage
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Reorder
 import androidx.compose.material.icons.outlined.Rotate90DegreesCw
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ZoomInMap
@@ -153,6 +154,7 @@ fun PdfReaderScreen(
     onConvertToImage: () -> Unit = {},
     onSignPdf: () -> Unit = {},
     onDeletePages: () -> Unit = {},
+    onReorderPages: () -> Unit = {},
     onRotatePages: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -474,6 +476,7 @@ fun PdfReaderScreen(
                         onSignPdf = onSignPdf,
                         onConvertToImage = onConvertToImage,
                         onDeletePages = onDeletePages,
+                        onReorderPages = onReorderPages,
                         onRotatePages = onRotatePages,
                     )
                 }
@@ -733,6 +736,7 @@ private fun ReaderActionsBar(
     onSignPdf: () -> Unit,
     onConvertToImage: () -> Unit,
     onDeletePages: () -> Unit,
+    onReorderPages: () -> Unit,
     onRotatePages: () -> Unit,
 ) {
     Surface(
@@ -768,6 +772,14 @@ private fun ReaderActionsBar(
                 contentDescription = stringResource(R.string.reader_rotate_pages),
                 enabled = enabled,
                 onClick = onRotatePages,
+                modifier = Modifier.weight(1f),
+            )
+            ReaderActionItem(
+                icon = Icons.Outlined.Reorder,
+                label = stringResource(R.string.reader_action_reorder),
+                contentDescription = stringResource(R.string.reader_reorder_pages),
+                enabled = enabled,
+                onClick = onReorderPages,
                 modifier = Modifier.weight(1f),
             )
             ReaderActionItem(

@@ -642,6 +642,10 @@ fun AndrosApp(
                 deletePagesUri = activeUri
                 readerUri = null
             },
+            onReorderPages = {
+                reorderPagesUri = activeUri
+                readerUri = null
+            },
             onRotatePages = {
                 rotatePagesUri = activeUri
                 readerUri = null
