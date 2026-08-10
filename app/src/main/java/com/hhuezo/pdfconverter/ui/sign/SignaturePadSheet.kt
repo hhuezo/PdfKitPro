@@ -68,7 +68,8 @@ private data class InkStroke(
 )
 
 private val SignatureColors = listOf(
-    Color(0xFF191C1E),
+    Color(0xFF1565C0), // Azul lapicero (default)
+    Color(0xFF191C1E), // Negro
     Color(0xFF424242),
     Color(0xFFB7131A),
     Color(0xFFE53935),
@@ -76,7 +77,6 @@ private val SignatureColors = listOf(
     Color(0xFF8E24AA),
     Color(0xFF5E35B1),
     Color(0xFF3949AB),
-    Color(0xFF1565C0),
     Color(0xFF039BE5),
     Color(0xFF00ACC1),
     Color(0xFF00897B),

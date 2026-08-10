@@ -190,13 +190,13 @@ fun PdfSignScreen(
     var overlays by remember { mutableStateOf<List<PageOverlay>>(emptyList()) }
     var selectedOverlayId by remember { mutableStateOf<String?>(null) }
     var selectedTool by remember { mutableStateOf<SignTool?>(null) }
-    var pendingPlacement by remember { mutableStateOf<PendingPlacement?>(null) }
     var showSignaturePad by remember { mutableStateOf(false) }
     var showInitialsPad by remember { mutableStateOf(false) }
     var showTextDialog by remember { mutableStateOf(false) }
     var textInput by remember { mutableStateOf("") }
     var exportState by remember { mutableStateOf(SignExportState.Editing) }
     var signedFile by remember { mutableStateOf<File?>(null) }
+    val listState = rememberLazyListState()
 
     DisposableEffect(uri) {
         val opened = runCatching { PdfDocumentSession(context, uri) }
@@ -209,27 +209,110 @@ fun PdfSignScreen(
         }
     }
 
-    fun placeStamp(pageIndex: Int, left: Float, top: Float, stamp: PendingPlacement.Stamp) {
+    fun placeStamp(pageIndex: Int, stamp: PendingPlacement.Stamp) {
         val doc = session ?: return
-        val aspect = runCatching { doc.pageAspectRatio(pageIndex) }.getOrDefault(0.707f)
+        val safePage = pageIndex.coerceIn(0, (doc.pageCount - 1).coerceAtLeast(0))
+        val aspect = runCatching { doc.pageAspectRatio(safePage) }.getOrDefault(0.707f)
         val width = stamp.preferredWidthFrac.coerceIn(0.12f, 0.55f)
-        val height = (width / aspect) *
-            (stamp.bitmap.height.toFloat() / stamp.bitmap.width.toFloat().coerceAtLeast(1f))
-        val clampedLeft = left.coerceIn(0f, 1f - width)
-        val clampedTop = top.coerceIn(0f, 1f - height.coerceAtMost(0.5f))
+        val height = ((width / aspect) *
+            (stamp.bitmap.height.toFloat() / stamp.bitmap.width.toFloat().coerceAtLeast(1f)))
+            .coerceAtMost(0.45f)
+        // Bottom-right default so the stamp appears ready to drag/resize.
+        val left = (1f - width - 0.06f).coerceAtLeast(0f)
+        val top = (1f - height - 0.08f).coerceAtLeast(0f)
         val overlay = PageOverlay(
             id = UUID.randomUUID().toString(),
-            pageIndex = pageIndex,
-            left = clampedLeft,
-            top = clampedTop,
+            pageIndex = safePage,
+            left = left,
+            top = top,
             width = width,
-            height = height.coerceAtMost(0.45f),
+            height = height,
             bitmap = stamp.bitmap,
         )
         overlays = overlays + overlay
         selectedOverlayId = overlay.id
-        pendingPlacement = null
         selectedTool = null
+        scope.launch {
+            listState.animateScrollToItem(safePage)
+        }
+    }
+
+    fun settleOrTransferOverlayPage(overlayId: String) {
+        val doc = session ?: return
+        var scrollTo: Int? = null
+        overlays = overlays.map { overlay ->
+            if (overlay.id != overlayId) return@map overlay
+            val centerY = overlay.top + overlay.height / 2f
+            when {
+                centerY < 0f && overlay.pageIndex > 0 -> {
+                    val newPage = overlay.pageIndex - 1
+                    scrollTo = newPage
+                    overlay.copy(
+                        pageIndex = newPage,
+                        left = overlay.left.coerceIn(0f, 1f - overlay.width),
+                        top = (1f - overlay.height - 0.06f).coerceAtLeast(0f),
+                    )
+                }
+                centerY > 1f && overlay.pageIndex < doc.pageCount - 1 -> {
+                    val newPage = overlay.pageIndex + 1
+                    scrollTo = newPage
+                    overlay.copy(
+                        pageIndex = newPage,
+                        left = overlay.left.coerceIn(0f, 1f - overlay.width),
+                        top = 0.06f,
+                    )
+                }
+                else -> overlay.copy(
+                    left = overlay.left.coerceIn(0f, 1f - overlay.width),
+                    top = overlay.top.coerceIn(0f, 1f - overlay.height),
+                )
+            }
+        }
+        scrollTo?.let { page ->
+            scope.launch { listState.animateScrollToItem(page) }
+        }
+    }
+
+    fun moveOverlayByDrag(overlayId: String, dxFrac: Float, dyFrac: Float) {
+        val doc = session ?: return
+        var scrollTo: Int? = null
+        overlays = overlays.map { overlay ->
+            if (overlay.id != overlayId) return@map overlay
+            val newLeft = (overlay.left + dxFrac).coerceIn(0f, 1f - overlay.width)
+            val tentativeTop = overlay.top + dyFrac
+            when {
+                // Arrastrar hacia arriba, fuera de la página → página anterior.
+                tentativeTop < -0.18f && overlay.pageIndex > 0 -> {
+                    val newPage = overlay.pageIndex - 1
+                    scrollTo = newPage
+                    overlay.copy(
+                        pageIndex = newPage,
+                        left = newLeft,
+                        top = (1f - overlay.height - 0.05f).coerceAtLeast(0f),
+                    )
+                }
+                // Arrastrar hacia abajo, fuera de la página → página siguiente.
+                tentativeTop + overlay.height > 1.18f &&
+                    overlay.pageIndex < doc.pageCount - 1 -> {
+                    val newPage = overlay.pageIndex + 1
+                    scrollTo = newPage
+                    overlay.copy(
+                        pageIndex = newPage,
+                        left = newLeft,
+                        top = 0.05f,
+                    )
+                }
+                else -> overlay.copy(
+                    left = newLeft,
+                    // Permite salir un poco del borde mientras se arrastra.
+                    top = tentativeTop.coerceIn(-0.35f, 1.35f - overlay.height),
+                )
+            }
+        }
+        scrollTo?.let { page ->
+            selectedOverlayId = overlayId
+            scope.launch { listState.animateScrollToItem(page) }
+        }
     }
 
 
@@ -526,7 +609,7 @@ fun PdfSignScreen(
                         val isZoomed = scale > 1.01f
 
                         LazyColumn(
-                            state = rememberLazyListState(),
+                            state = listState,
                             userScrollEnabled = !isZoomed && !isAdjustingOverlay,
                             modifier = Modifier
                                 .fillMaxSize()
@@ -613,30 +696,20 @@ fun PdfSignScreen(
                                     viewScale = scale,
                                     overlays = overlays.filter { it.pageIndex == pageIndex },
                                     selectedOverlayId = selectedOverlayId,
-                                    placementActive = pendingPlacement != null &&
-                                        exportState == SignExportState.Editing,
                                     onSelectOverlay = { selectedOverlayId = it },
                                     onClearSelection = { selectedOverlayId = null },
-                                    onAdjustingOverlayChange = { isAdjustingOverlay = it },
+                                    onAdjustingOverlayChange = { adjusting ->
+                                        if (!adjusting) {
+                                            selectedOverlayId?.let(::settleOrTransferOverlayPage)
+                                        }
+                                        isAdjustingOverlay = adjusting
+                                    },
                                     onDeleteOverlay = { id ->
                                         overlays = overlays.filterNot { it.id == id }
                                         if (selectedOverlayId == id) selectedOverlayId = null
                                         isAdjustingOverlay = false
                                     },
-                                    onMoveOverlay = { id, dx, dy ->
-                                        overlays = overlays.map { overlay ->
-                                            if (overlay.id != id) {
-                                                overlay
-                                            } else {
-                                                overlay.copy(
-                                                    left = (overlay.left + dx)
-                                                        .coerceIn(0f, 1f - overlay.width),
-                                                    top = (overlay.top + dy)
-                                                        .coerceIn(0f, 1f - overlay.height),
-                                                )
-                                            }
-                                        }
-                                    },
+                                    onMoveOverlay = ::moveOverlayByDrag,
                                     onResizeOverlay = { id, dWidthFrac, dHeightFrac ->
                                         overlays = overlays.map { overlay ->
                                             if (overlay.id != id) {
@@ -653,12 +726,6 @@ fun PdfSignScreen(
                                                     height = height,
                                                 )
                                             }
-                                        }
-                                    },
-                                    onPlaceAt = { left, top ->
-                                        val pending = pendingPlacement
-                                        if (pending is PendingPlacement.Stamp) {
-                                            placeStamp(pageIndex, left, top, pending)
                                         }
                                     },
                                 )
@@ -685,15 +752,13 @@ fun PdfSignScreen(
                                             Locale.getDefault(),
                                         ).format(Date())
                                         val bitmap = PdfSigner.textBitmap(dateText, textSizePx = 96f)
-                                        pendingPlacement = PendingPlacement.Stamp(
-                                            bitmap = bitmap,
-                                            preferredWidthFrac = 0.28f,
+                                        placeStamp(
+                                            pageIndex = listState.firstVisibleItemIndex,
+                                            stamp = PendingPlacement.Stamp(
+                                                bitmap = bitmap,
+                                                preferredWidthFrac = 0.28f,
+                                            ),
                                         )
-                                        scope.launch {
-                                            snackbar.showSnackbar(
-                                                context.getString(R.string.sign_tap_to_place),
-                                            )
-                                        }
                                     }
                                 }
                             },
@@ -735,10 +800,10 @@ fun PdfSignScreen(
             },
             onSaved = { bitmap ->
                 showSignaturePad = false
-                pendingPlacement = PendingPlacement.Stamp(bitmap, preferredWidthFrac = 0.38f)
-                scope.launch {
-                    snackbar.showSnackbar(context.getString(R.string.sign_tap_to_place))
-                }
+                placeStamp(
+                    pageIndex = listState.firstVisibleItemIndex,
+                    stamp = PendingPlacement.Stamp(bitmap, preferredWidthFrac = 0.38f),
+                )
             },
         )
     }
@@ -752,10 +817,10 @@ fun PdfSignScreen(
             },
             onSaved = { bitmap ->
                 showInitialsPad = false
-                pendingPlacement = PendingPlacement.Stamp(bitmap, preferredWidthFrac = 0.18f)
-                scope.launch {
-                    snackbar.showSnackbar(context.getString(R.string.sign_tap_to_place))
-                }
+                placeStamp(
+                    pageIndex = listState.firstVisibleItemIndex,
+                    stamp = PendingPlacement.Stamp(bitmap, preferredWidthFrac = 0.18f),
+                )
             },
         )
     }
@@ -780,12 +845,10 @@ fun PdfSignScreen(
                             if (value.isNotEmpty()) {
                                 showTextDialog = false
                                 val bitmap = PdfSigner.textBitmap(value, textSizePx = 88f)
-                                pendingPlacement = PendingPlacement.Stamp(bitmap, 0.4f)
-                                scope.launch {
-                                    snackbar.showSnackbar(
-                                        context.getString(R.string.sign_tap_to_place),
-                                    )
-                                }
+                                placeStamp(
+                                    pageIndex = listState.firstVisibleItemIndex,
+                                    stamp = PendingPlacement.Stamp(bitmap, 0.4f),
+                                )
                             }
                         },
                     ),
@@ -798,12 +861,10 @@ fun PdfSignScreen(
                         if (value.isNotEmpty()) {
                             showTextDialog = false
                             val bitmap = PdfSigner.textBitmap(value, textSizePx = 88f)
-                            pendingPlacement = PendingPlacement.Stamp(bitmap, 0.4f)
-                            scope.launch {
-                                snackbar.showSnackbar(
-                                    context.getString(R.string.sign_tap_to_place),
-                                )
-                            }
+                            placeStamp(
+                                pageIndex = listState.firstVisibleItemIndex,
+                                stamp = PendingPlacement.Stamp(bitmap, 0.4f),
+                            )
                         }
                     },
                 ) {
@@ -927,14 +988,12 @@ private fun SignPageItem(
     viewScale: Float = 1f,
     overlays: List<PageOverlay>,
     selectedOverlayId: String?,
-    placementActive: Boolean,
     onSelectOverlay: (String) -> Unit,
     onClearSelection: () -> Unit,
     onAdjustingOverlayChange: (Boolean) -> Unit,
     onDeleteOverlay: (String) -> Unit,
     onMoveOverlay: (id: String, dxFrac: Float, dyFrac: Float) -> Unit,
     onResizeOverlay: (id: String, dWidthFrac: Float, dHeightFrac: Float) -> Unit,
-    onPlaceAt: (left: Float, top: Float) -> Unit,
 ) {
     var pageBitmap by remember(pageIndex) { mutableStateOf<Bitmap?>(null) }
     val density = LocalDensity.current
@@ -961,17 +1020,8 @@ private fun SignPageItem(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(8.dp))
-                .pointerInput(pageIndex, placementActive) {
-                    detectTapGestures { tapOffset ->
-                        if (placementActive) {
-                            onPlaceAt(
-                                (tapOffset.x / size.width).coerceIn(0f, 1f),
-                                (tapOffset.y / size.height).coerceIn(0f, 1f),
-                            )
-                        } else {
-                            onClearSelection()
-                        }
-                    }
+                .pointerInput(pageIndex) {
+                    detectTapGestures { onClearSelection() }
                 },
         ) {
             val pageWidthPx = constraints.maxWidth.toFloat().coerceAtLeast(1f)
@@ -992,20 +1042,6 @@ private fun SignPageItem(
                         .size(28.dp),
                     strokeWidth = 2.dp,
                     color = Primary,
-                )
-            }
-
-            if (placementActive) {
-                Text(
-                    text = stringResource(R.string.sign_here),
-                    color = Primary.copy(alpha = 0.7f),
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .background(Primary.copy(alpha = 0.06f), RoundedCornerShape(8.dp))
-                        .border(1.dp, Primary.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
                 )
             }
 

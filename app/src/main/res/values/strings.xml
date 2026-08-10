@@ -169,6 +169,9 @@
     <string name="sign_place">Colocar</string>
     <string name="sign_tap_to_place">Toca la página para colocar el elemento</string>
     <string name="sign_here">Firmar aquí</string>
+    <string name="sign_move_prev_page">Página anterior</string>
+    <string name="sign_move_next_page">Página siguiente</string>
+    <string name="sign_overlay_page">Pág. %1$d/%2$d</string>
     <string name="sign_delete_overlay">Eliminar</string>
     <string name="sign_empty_overlays">Agrega una firma, texto o fecha antes de guardar</string>
     <string name="sign_save_success">PDF firmado guardado en Descargas/PdfKit Pro</string>
