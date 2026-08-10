@@ -72,6 +72,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hhuezo.pdfconverter.data.RecentPdf
 import com.hhuezo.pdfconverter.data.RecentPdfsRepository
 import com.hhuezo.pdfconverter.ui.deletepages.PdfDeletePagesScreen
+import com.hhuezo.pdfconverter.ui.reorder.PdfReorderPagesScreen
 import com.hhuezo.pdfconverter.ui.rotate.PdfRotatePagesScreen
 import com.hhuezo.pdfconverter.ui.home.HomeScreen
 import com.hhuezo.pdfconverter.ui.home.RecentFilesScreen
@@ -202,6 +203,7 @@ fun AndrosApp(
     var convertToImageUri by rememberSaveable { mutableStateOf<String?>(null) }
     var signPdfUri by rememberSaveable { mutableStateOf<String?>(null) }
     var deletePagesUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var reorderPagesUri by rememberSaveable { mutableStateOf<String?>(null) }
     var rotatePagesUri by rememberSaveable { mutableStateOf<String?>(null) }
     var mergeActive by rememberSaveable { mutableStateOf(false) }
     var scanActive by rememberSaveable { mutableStateOf(false) }
@@ -249,6 +251,7 @@ fun AndrosApp(
             signPdfUri = null
             convertToImageUri = null
             deletePagesUri = null
+            reorderPagesUri = null
             rotatePagesUri = null
             mergeActive = false
             scanActive = false
@@ -269,6 +272,7 @@ fun AndrosApp(
             )
             signPdfUri = null
             deletePagesUri = null
+            reorderPagesUri = null
             rotatePagesUri = null
             mergeActive = false
             scanActive = false
@@ -288,6 +292,7 @@ fun AndrosApp(
             )
             convertToImageUri = null
             deletePagesUri = null
+            reorderPagesUri = null
             rotatePagesUri = null
             mergeActive = false
             scanActive = false
@@ -310,8 +315,29 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             readerUri = null
+            reorderPagesUri = null
             rotatePagesUri = null
             deletePagesUri = uri.toString()
+        }
+    }
+
+    fun openForReorderPages(uri: Uri, intentFlags: Int = 0) {
+        context.takePersistableReadPermission(uri, intentFlags)
+        val info = context.queryPdfInfo(uri)
+        scope.launch {
+            repository.addOrUpdate(
+                uri = uri.toString(),
+                displayName = info.displayName,
+                sizeBytes = info.sizeBytes,
+            )
+            signPdfUri = null
+            convertToImageUri = null
+            mergeActive = false
+            scanActive = false
+            readerUri = null
+            deletePagesUri = null
+            rotatePagesUri = null
+            reorderPagesUri = uri.toString()
         }
     }
 
@@ -330,6 +356,7 @@ fun AndrosApp(
             scanActive = false
             readerUri = null
             deletePagesUri = null
+            reorderPagesUri = null
             rotatePagesUri = uri.toString()
         }
     }
@@ -338,6 +365,7 @@ fun AndrosApp(
         signPdfUri = null
         convertToImageUri = null
         deletePagesUri = null
+        reorderPagesUri = null
         rotatePagesUri = null
         readerUri = null
         scanActive = false
@@ -348,6 +376,7 @@ fun AndrosApp(
         signPdfUri = null
         convertToImageUri = null
         deletePagesUri = null
+        reorderPagesUri = null
         rotatePagesUri = null
         readerUri = null
         mergeActive = false
@@ -433,6 +462,18 @@ fun AndrosApp(
         }
     }
 
+    val pickPdfForReorderPages = rememberLauncherForActivityResult(
+        contract = OpenWritablePdfDocument(),
+    ) { uri ->
+        uri?.let {
+            openForReorderPages(
+                it,
+                intentFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
+    }
+
     val pickPdfForRotatePages = rememberLauncherForActivityResult(
         contract = OpenWritablePdfDocument(),
     ) { uri ->
@@ -461,6 +502,10 @@ fun AndrosApp(
         pickPdfForDeletePages.launch(arrayOf("application/pdf"))
     }
 
+    fun launchPickerForReorderPages() {
+        pickPdfForReorderPages.launch(arrayOf("application/pdf"))
+    }
+
     fun launchPickerForRotatePages() {
         pickPdfForRotatePages.launch(arrayOf("application/pdf"))
     }
@@ -475,6 +520,7 @@ fun AndrosApp(
             mergeActive -> mergeActive = false
             scanActive -> scanActive = false
             rotatePagesUri != null -> rotatePagesUri = null
+            reorderPagesUri != null -> reorderPagesUri = null
             deletePagesUri != null -> deletePagesUri = null
             convertToImageUri != null -> convertToImageUri = null
             readerUri != null -> readerUri = null
@@ -543,6 +589,15 @@ fun AndrosApp(
     if (activeRotatePagesUri != null) {
         PdfRotatePagesScreen(
             uri = Uri.parse(activeRotatePagesUri),
+            onBack = ::navigateBack,
+        )
+        return
+    }
+
+    val activeReorderPagesUri = reorderPagesUri
+    if (activeReorderPagesUri != null) {
+        PdfReorderPagesScreen(
+            uri = Uri.parse(activeReorderPagesUri),
             onBack = ::navigateBack,
         )
         return
@@ -636,6 +691,7 @@ fun AndrosApp(
                         QuickToolId.ToImage -> launchPickerForImage()
                         QuickToolId.Sign -> launchPickerForSign()
                         QuickToolId.DeletePages -> launchPickerForDeletePages()
+                        QuickToolId.ReorderPages -> launchPickerForReorderPages()
                         QuickToolId.RotatePages -> launchPickerForRotatePages()
                         QuickToolId.Merge -> openMerge()
                         QuickToolId.Scan -> openScan()

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MergeType
+import androidx.compose.material.icons.outlined.Reorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -42,6 +43,7 @@ enum class QuickToolId {
     ToImage,
     Sign,
     DeletePages,
+    ReorderPages,
     RotatePages,
     Merge,
     Scan,
@@ -63,6 +65,10 @@ private val DeleteText = Color(0xFF5C0F22)
 private val RotateCardBg = Color(0xFFFFF0CC)
 private val RotateIconTint = Color(0xFF8A5A00)
 private val RotateText = Color(0xFF4A3500)
+
+private val ReorderCardBg = Color(0xFFD7E8FF)
+private val ReorderIconTint = Color(0xFF1B4F9C)
+private val ReorderText = Color(0xFF0E2A57)
 
 private val MergeCardBg = Color(0xFFE6D9FF)
 private val MergeIconTint = Color(0xFF5B2FA0)
@@ -109,6 +115,16 @@ fun ToolsScreen(
             titleColor = DeleteText,
             subtitleColor = DeleteText.copy(alpha = 0.72f),
         ) to QuickToolId.DeletePages,
+        QuickTool(
+            titleRes = R.string.reorder_pages,
+            subtitleRes = R.string.reorder_pages_subtitle,
+            icon = Icons.Outlined.Reorder,
+            cardBackground = ReorderCardBg,
+            iconBackground = Color.White.copy(alpha = 0.9f),
+            iconTint = ReorderIconTint,
+            titleColor = ReorderText,
+            subtitleColor = ReorderText.copy(alpha = 0.72f),
+        ) to QuickToolId.ReorderPages,
         QuickTool(
             titleRes = R.string.rotate_pages_title,
             subtitleRes = R.string.rotate_pages_subtitle,

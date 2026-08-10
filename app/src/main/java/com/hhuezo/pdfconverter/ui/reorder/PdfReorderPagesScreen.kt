@@ -1,4 +1,4 @@
-package com.hhuezo.pdfconverter.ui.deletepages
+package com.hhuezo.pdfconverter.ui.reorder
 
 import android.Manifest
 import android.content.Intent
@@ -10,15 +10,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,24 +24,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.FilterNone
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.Reorder
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -70,19 +66,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.hhuezo.pdfconverter.R
+import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
+import com.hhuezo.pdfconverter.pdf.PdfPageReorderer
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
-import com.hhuezo.pdfconverter.R
-import com.hhuezo.pdfconverter.pdf.PdfBlankPageDetector
-import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
-import com.hhuezo.pdfconverter.pdf.PdfPageRemover
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.PdfSaveOutcome
 import com.hhuezo.pdfconverter.util.queryPdfInfo
@@ -90,9 +84,8 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.roundToInt
 
-private enum class DeleteUiState {
+private enum class ReorderUiState {
     Idle,
     Processing,
     Ready,
@@ -100,25 +93,22 @@ private enum class DeleteUiState {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PdfDeletePagesScreen(
+fun PdfReorderPagesScreen(
     uri: Uri,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val density = LocalDensity.current
     val snackbar = remember { SnackbarHostState() }
 
     val fileInfo = remember(uri) { context.queryPdfInfo(uri) }
     var session by remember { mutableStateOf<PdfDocumentSession?>(null) }
     var openError by remember { mutableStateOf(false) }
-    var selectedPages by remember { mutableStateOf(setOf<Int>()) }
-    var blankPages by remember(uri) { mutableStateOf(setOf<Int>()) }
-    var isDetectingBlanks by remember { mutableStateOf(false) }
-    var uiState by remember { mutableStateOf(DeleteUiState.Idle) }
+    var pageOrder by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var uiState by remember { mutableStateOf(ReorderUiState.Idle) }
     var outputFile by remember { mutableStateOf<File?>(null) }
-    var removedCount by remember { mutableIntStateOf(0) }
+    var totalPageCount by remember { mutableIntStateOf(0) }
 
     DisposableEffect(uri) {
         val opened = runCatching { PdfDocumentSession(context, uri) }.getOrElse {
@@ -132,6 +122,13 @@ fun PdfDeletePagesScreen(
         }
     }
 
+    LaunchedEffect(session?.pageCount) {
+        val count = session?.pageCount ?: return@LaunchedEffect
+        if (pageOrder.size != count) {
+            pageOrder = List(count) { it }
+        }
+    }
+
     fun downloadResult(file: File) {
         scope.launch {
             val saved = withContext(Dispatchers.IO) {
@@ -139,13 +136,13 @@ fun PdfDeletePagesScreen(
                 PdfFileSaver.saveToDownloads(
                     context = context,
                     source = file,
-                    displayName = "${baseName}_sin_paginas.pdf",
+                    displayName = "${baseName}_reordenado.pdf",
                 )
             }
             if (saved != null) {
-                snackbar.showSnackbar(context.getString(R.string.delete_pages_save_success))
+                snackbar.showSnackbar(context.getString(R.string.reorder_pages_save_success))
             } else {
-                snackbar.showSnackbar(context.getString(R.string.delete_pages_download_error))
+                snackbar.showSnackbar(context.getString(R.string.reorder_pages_download_error))
             }
         }
     }
@@ -158,7 +155,7 @@ fun PdfDeletePagesScreen(
                     context = context,
                     originalUri = uri,
                     source = file,
-                    fallbackDisplayName = "${baseName}_sin_paginas.pdf",
+                    fallbackDisplayName = "${baseName}_reordenado.pdf",
                 )
             }
             val message = when (outcome) {
@@ -178,7 +175,7 @@ fun PdfDeletePagesScreen(
             downloadResult(file)
         } else {
             scope.launch {
-                snackbar.showSnackbar(context.getString(R.string.delete_pages_download_error))
+                snackbar.showSnackbar(context.getString(R.string.reorder_pages_download_error))
             }
         }
     }
@@ -202,110 +199,69 @@ fun PdfDeletePagesScreen(
         saveResult(file)
     }
 
-    fun togglePage(pageIndex: Int) {
-        if (uiState == DeleteUiState.Processing) return
-        if ((session?.pageCount ?: 0) <= 1) return
-        selectedPages = if (pageIndex in selectedPages) {
-            selectedPages - pageIndex
-        } else {
-            selectedPages + pageIndex
-        }
-        uiState = DeleteUiState.Idle
+    fun movePage(from: Int, to: Int) {
+        if (uiState == ReorderUiState.Processing) return
+        if (pageOrder.size <= 1) return
+        if (to !in pageOrder.indices) return
+        val mutable = pageOrder.toMutableList()
+        val item = mutable.removeAt(from)
+        mutable.add(to, item)
+        pageOrder = mutable
+        uiState = ReorderUiState.Idle
         outputFile = null
     }
 
-    fun selectBlankPages() {
-        val doc = session ?: return
-        if (doc.pageCount <= 1) return
-        if (isDetectingBlanks || uiState == DeleteUiState.Processing) return
-        isDetectingBlanks = true
-        scope.launch {
-            val detected = withContext(Dispatchers.Default) {
-                runCatching { PdfBlankPageDetector.findBlankPages(doc) }.getOrElse { emptyList() }
-            }
-            blankPages = detected.toSet()
-            isDetectingBlanks = false
-
-            when {
-                detected.isEmpty() -> {
-                    snackbar.showSnackbar(context.getString(R.string.delete_pages_no_blank))
-                }
-                else -> {
-                    val maxSelectable = doc.pageCount - 1
-                    var newSelection = selectedPages + detected.toSet()
-                    val trimmed = newSelection.size > maxSelectable
-                    if (trimmed) {
-                        val pageToKeep = (0 until doc.pageCount)
-                            .firstOrNull { it !in blankPages }
-                            ?: detected.minOrNull()
-                            ?: 0
-                        newSelection = newSelection - pageToKeep
-                        if (newSelection.size > maxSelectable) {
-                            newSelection = newSelection.sorted().take(maxSelectable).toSet()
-                        }
-                    }
-                    selectedPages = newSelection
-                    uiState = DeleteUiState.Idle
-                    outputFile = null
-                    snackbar.showSnackbar(
-                        if (trimmed) {
-                            context.getString(R.string.delete_pages_blank_partial)
-                        } else {
-                            context.getString(
-                                R.string.delete_pages_blank_selected,
-                                detected.size,
-                            )
-                        },
-                    )
-                }
-            }
-        }
+    fun resetOrder() {
+        if (uiState == ReorderUiState.Processing) return
+        val count = session?.pageCount ?: return
+        pageOrder = List(count) { it }
+        uiState = ReorderUiState.Idle
+        outputFile = null
     }
 
-    fun runDelete() {
-        val doc = session ?: return
-        if (uiState == DeleteUiState.Processing) return
+    fun applyReorder() {
+        if (session == null) return
+        if (uiState == ReorderUiState.Processing) return
+        val identity = List(pageOrder.size) { it }
         when {
-            selectedPages.isEmpty() -> {
+            pageOrder.size < 2 -> {
                 scope.launch {
-                    snackbar.showSnackbar(context.getString(R.string.delete_pages_error_none))
+                    snackbar.showSnackbar(context.getString(R.string.reorder_pages_single_page))
                 }
             }
-            selectedPages.size >= doc.pageCount -> {
+            pageOrder == identity -> {
                 scope.launch {
-                    snackbar.showSnackbar(context.getString(R.string.delete_pages_error_all))
+                    snackbar.showSnackbar(context.getString(R.string.reorder_pages_error_none))
                 }
             }
             else -> {
-                val pages = selectedPages.sorted()
-                uiState = DeleteUiState.Processing
+                uiState = ReorderUiState.Processing
                 outputFile = null
+                val orderSnapshot = pageOrder
                 scope.launch {
                     val result = withContext(Dispatchers.IO) {
                         runCatching {
                             val out = File(
                                 context.cacheDir,
-                                "sin_paginas_${System.currentTimeMillis()}.pdf",
+                                "reordenado_${System.currentTimeMillis()}.pdf",
                             )
-                            PdfPageRemover(context).removePages(
+                            val pages = PdfPageReorderer(context).reorderPages(
                                 uri = uri,
-                                pageIndicesToRemove = pages,
+                                pageOrder = orderSnapshot,
                                 outputFile = out,
                             )
-                            out to pages.size
+                            out to pages
                         }
                     }
                     result.fold(
-                        onSuccess = { (file, count) ->
+                        onSuccess = { (file, pages) ->
                             outputFile = file
-                            removedCount = count
-                            uiState = DeleteUiState.Ready
+                            totalPageCount = pages
+                            uiState = ReorderUiState.Ready
                         },
                         onFailure = {
-                            uiState = DeleteUiState.Idle
-                            snackbar.showSnackbar(
-                                context.getString(R.string.delete_pages_error),
-                            )
+                            uiState = ReorderUiState.Idle
+                            snackbar.showSnackbar(context.getString(R.string.reorder_pages_error))
                         },
                     )
                 }
@@ -314,7 +270,7 @@ fun PdfDeletePagesScreen(
     }
 
     val pageCount = session?.pageCount ?: 0
-    val remainingCount = (pageCount - selectedPages.size).coerceAtLeast(0)
+    val hasChanges = pageOrder.isNotEmpty() && pageOrder != List(pageOrder.size) { it }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -325,7 +281,7 @@ fun PdfDeletePagesScreen(
                 title = {
                     Column {
                         Text(
-                            text = stringResource(R.string.delete_pages_title),
+                            text = stringResource(R.string.reorder_pages_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
@@ -334,9 +290,12 @@ fun PdfDeletePagesScreen(
                         if (pageCount > 0) {
                             Text(
                                 text = stringResource(
-                                    R.string.delete_pages_selection_meta,
-                                    selectedPages.size,
-                                    remainingCount,
+                                    if (hasChanges) {
+                                        R.string.reorder_pages_changed_meta
+                                    } else {
+                                        R.string.reorder_pages_selection_meta
+                                    },
+                                    pageCount,
                                 ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
@@ -352,6 +311,16 @@ fun PdfDeletePagesScreen(
                         )
                     }
                 },
+                actions = {
+                    if (hasChanges && uiState != ReorderUiState.Processing) {
+                        IconButton(onClick = ::resetOrder) {
+                            Icon(
+                                imageVector = Icons.Outlined.RestartAlt,
+                                contentDescription = stringResource(R.string.reorder_pages_reset),
+                            )
+                        }
+                    }
+                },
                 colors = androsTopAppBarColors(),
             )
         },
@@ -361,7 +330,7 @@ fun PdfDeletePagesScreen(
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 8.dp,
             ) {
-                if (uiState == DeleteUiState.Ready) {
+                if (uiState == ReorderUiState.Ready) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -379,8 +348,8 @@ fun PdfDeletePagesScreen(
                             )
                             Text(
                                 text = stringResource(
-                                    R.string.delete_pages_ready,
-                                    removedCount,
+                                    R.string.reorder_pages_ready,
+                                    totalPageCount,
                                 ),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
@@ -410,7 +379,7 @@ fun PdfDeletePagesScreen(
                             ) {
                                 Icon(Icons.Outlined.Share, contentDescription = null)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.delete_pages_share))
+                                Text(stringResource(R.string.reorder_pages_share))
                             }
                         }
                         Button(
@@ -422,48 +391,37 @@ fun PdfDeletePagesScreen(
                         ) {
                             Icon(Icons.Outlined.Download, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.delete_pages_download))
+                            Text(stringResource(R.string.reorder_pages_download))
                         }
                     }
                 } else {
                     Button(
-                        onClick = ::runDelete,
+                        onClick = ::applyReorder,
                         enabled = !openError && pageCount > 1 &&
-                            uiState != DeleteUiState.Processing &&
-                            selectedPages.isNotEmpty(),
+                            uiState != ReorderUiState.Processing &&
+                            hasChanges,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp)
                             .height(56.dp),
                         shape = RoundedCornerShape(50),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                        ),
                     ) {
-                        if (uiState == DeleteUiState.Processing) {
+                        if (uiState == ReorderUiState.Processing) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onError,
+                                color = MaterialTheme.colorScheme.onPrimary,
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = stringResource(R.string.delete_pages_processing),
+                                text = stringResource(R.string.reorder_pages_processing),
                                 style = MaterialTheme.typography.titleMedium,
                             )
                         } else {
-                            Icon(Icons.Outlined.DeleteSweep, contentDescription = null)
+                            Icon(Icons.Outlined.Reorder, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (selectedPages.isEmpty()) {
-                                    stringResource(R.string.delete_pages_action)
-                                } else {
-                                    stringResource(
-                                        R.string.delete_pages_action_count,
-                                        selectedPages.size,
-                                    )
-                                },
+                                text = stringResource(R.string.reorder_pages_action),
                                 style = MaterialTheme.typography.titleMedium,
                             )
                         }
@@ -481,7 +439,7 @@ fun PdfDeletePagesScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = stringResource(R.string.delete_pages_error_open),
+                        text = stringResource(R.string.reorder_pages_error_open),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -500,77 +458,58 @@ fun PdfDeletePagesScreen(
 
             else -> {
                 val doc = session!!
-                val isSinglePage = pageCount == 1
-                BoxWithConstraints(
+                val isSinglePage = pageCount <= 1
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
+                    contentPadding = PaddingValues(
+                        horizontal = 12.dp,
+                        vertical = 12.dp,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    val renderWidthPx = with(density) {
-                        maxWidth.toPx().roundToInt().coerceAtLeast(1)
-                    }
-
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            horizontal = 8.dp,
-                            vertical = 12.dp,
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                if (isSinglePage) {
-                                    SinglePageBlockedBanner(
-                                        message = stringResource(R.string.delete_pages_single_page),
-                                    )
-                                } else {
-                                    Text(
-                                        text = stringResource(R.string.delete_pages_tap_hint),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    FilledTonalButton(
-                                        onClick = ::selectBlankPages,
-                                        enabled = uiState != DeleteUiState.Processing &&
-                                            !isDetectingBlanks,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(50),
-                                    ) {
-                                        if (isDetectingBlanks) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(18.dp),
-                                                strokeWidth = 2.dp,
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(stringResource(R.string.delete_pages_detecting_blank))
-                                        } else {
-                                            Icon(Icons.Outlined.FilterNone, contentDescription = null)
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(stringResource(R.string.delete_pages_select_blank))
-                                        }
-                                    }
-                                }
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp, vertical = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            if (isSinglePage) {
+                                SinglePageBlockedBanner(
+                                    message = stringResource(R.string.reorder_pages_single_page),
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.reorder_pages_tap_hint),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    text = stringResource(R.string.reorder_pages_info),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                )
                             }
                         }
-                        items(doc.pageCount, key = { it }) { pageIndex ->
-                            SelectablePdfPage(
-                                session = doc,
-                                pageIndex = pageIndex,
-                                selected = pageIndex in selectedPages,
-                                isBlank = pageIndex in blankPages,
-                                targetWidthPx = renderWidthPx,
-                                enabled = !isSinglePage && uiState != DeleteUiState.Processing,
-                                onToggle = { togglePage(pageIndex) },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
+                    }
+                    itemsIndexed(
+                        items = pageOrder,
+                        key = { _, originalIndex -> originalIndex },
+                    ) { position, originalIndex ->
+                        ReorderPageRow(
+                            session = doc,
+                            originalPageIndex = originalIndex,
+                            newPosition = position + 1,
+                            moved = originalIndex != position,
+                            canMoveUp = !isSinglePage && position > 0,
+                            canMoveDown = !isSinglePage && position < pageOrder.lastIndex,
+                            enabled = !isSinglePage && uiState != ReorderUiState.Processing,
+                            onMoveUp = { movePage(position, position - 1) },
+                            onMoveDown = { movePage(position, position + 1) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }
@@ -579,134 +518,112 @@ fun PdfDeletePagesScreen(
 }
 
 @Composable
-private fun SelectablePdfPage(
+private fun ReorderPageRow(
     session: PdfDocumentSession,
-    pageIndex: Int,
-    selected: Boolean,
-    isBlank: Boolean,
-    targetWidthPx: Int,
+    originalPageIndex: Int,
+    newPosition: Int,
+    moved: Boolean,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
     enabled: Boolean,
-    onToggle: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var bitmap by remember(pageIndex) { mutableStateOf<Bitmap?>(null) }
-    val aspectRatio = remember(pageIndex, session) {
-        runCatching { session.pageAspectRatio(pageIndex) }.getOrDefault(0.707f)
-    }
-    val pageShape = RoundedCornerShape(4.dp)
-    val errorColor = MaterialTheme.colorScheme.error
+    var bitmap by remember(originalPageIndex) { mutableStateOf<Bitmap?>(null) }
+    val thumbWidthPx = 160
 
-    LaunchedEffect(session, pageIndex, targetWidthPx) {
-        if (targetWidthPx <= 0) return@LaunchedEffect
+    LaunchedEffect(session, originalPageIndex) {
         bitmap = withContext(Dispatchers.Default) {
-            runCatching { session.renderPage(pageIndex, targetWidthPx) }.getOrNull()
+            runCatching { session.renderPage(originalPageIndex, thumbWidthPx) }.getOrNull()
         }
     }
 
-    Surface(
+    val shape = RoundedCornerShape(16.dp)
+    val borderColor = if (moved) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outlineVariant
+    }
+
+    Row(
         modifier = modifier
-            .aspectRatio(aspectRatio)
-            .clickable(enabled = enabled, onClick = onToggle),
-        shape = pageShape,
-        shadowElevation = 2.dp,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = androidx.compose.foundation.BorderStroke(
-            width = if (selected) 2.dp else 0.dp,
-            color = if (selected) errorColor else Color.Transparent,
-        ),
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, borderColor, shape)
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Text(
+            text = newPosition.toString(),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = if (moved) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            modifier = Modifier.width(36.dp),
+        )
+
         Box(
-            modifier = Modifier.clip(pageShape),
+            modifier = Modifier
+                .width(72.dp)
+                .height(96.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
-            val current = bitmap
-            if (current != null && !current.isRecycled) {
+            val pageBitmap = bitmap
+            if (pageBitmap != null) {
                 Image(
-                    bitmap = current.asImageBitmap(),
-                    contentDescription = stringResource(
-                        R.string.delete_pages_page_label,
-                        pageIndex + 1,
-                    ),
-                    contentScale = ContentScale.FillWidth,
+                    bitmap = pageBitmap.asImageBitmap(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(22.dp),
                     strokeWidth = 2.dp,
                 )
             }
+        }
 
-            if (selected) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(errorColor.copy(alpha = 0.22f)),
-                )
-            }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.reorder_pages_position, newPosition),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = stringResource(R.string.reorder_pages_original, originalPageIndex + 1),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(10.dp),
-                shape = RoundedCornerShape(6.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                shadowElevation = 1.dp,
-            ) {
-                Text(
-                    text = stringResource(R.string.delete_pages_page_label, pageIndex + 1),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-            }
-
-            if (isBlank) {
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(10.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.95f),
-                    shadowElevation = 1.dp,
-                ) {
-                    Text(
-                        text = stringResource(R.string.delete_pages_blank_badge),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    )
-                }
-            }
-
+        Column {
             IconButton(
-                onClick = onToggle,
-                enabled = enabled,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(6.dp)
-                    .size(44.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                        shape = CircleShape,
-                    ),
+                onClick = onMoveUp,
+                enabled = enabled && canMoveUp,
             ) {
                 Icon(
-                    imageVector = if (selected) {
-                        Icons.Outlined.CheckCircle
-                    } else {
-                        Icons.Outlined.RadioButtonUnchecked
-                    },
-                    contentDescription = stringResource(
-                        if (selected) {
-                            R.string.delete_pages_unmark
-                        } else {
-                            R.string.delete_pages_mark
-                        },
-                    ),
-                    tint = if (selected) errorColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(28.dp),
+                    imageVector = Icons.Outlined.KeyboardArrowUp,
+                    contentDescription = stringResource(R.string.reorder_pages_move_up),
+                )
+            }
+            IconButton(
+                onClick = onMoveDown,
+                enabled = enabled && canMoveDown,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.KeyboardArrowDown,
+                    contentDescription = stringResource(R.string.reorder_pages_move_down),
                 )
             }
         }
@@ -755,7 +672,7 @@ private fun sharePdf(context: android.content.Context, file: File) {
     context.startActivity(
         Intent.createChooser(
             share,
-            context.getString(R.string.delete_pages_share_title),
+            context.getString(R.string.reorder_pages_share_title),
         ),
     )
 }
