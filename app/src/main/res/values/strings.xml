@@ -254,6 +254,9 @@
     <string name="reader_download_copy">Guardar copia</string>
     <string name="reader_download_success">Copia guardada en Descargas/PdfKit Pro</string>
     <string name="reader_download_error">No se pudo descargar la copia</string>
+    <string name="reader_share">Compartir</string>
+    <string name="reader_share_title">Compartir PDF</string>
+    <string name="reader_share_error">No se pudo compartir el PDF</string>
     <string name="reader_action_sign">Firmar</string>
     <string name="reader_action_image">Imagen</string>
     <string name="reader_action_delete_pages">Páginas</string>

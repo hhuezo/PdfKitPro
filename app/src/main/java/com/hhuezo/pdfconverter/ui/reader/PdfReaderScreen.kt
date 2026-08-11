@@ -1,5 +1,7 @@
 package com.hhuezo.pdfconverter.ui.reader
 
+import android.content.ClipData
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
@@ -48,6 +50,7 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Reorder
 import androidx.compose.material.icons.outlined.Rotate90DegreesCw
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.ZoomInMap
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -106,7 +109,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import android.content.ClipData
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -115,6 +117,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import android.graphics.Paint as AndroidPaint
 import android.graphics.RectF as AndroidRectF
+import androidx.core.content.FileProvider
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.R
@@ -124,6 +127,7 @@ import com.hhuezo.pdfconverter.pdf.PdfPageTextLayer
 import com.hhuezo.pdfconverter.pdf.PdfSearchMatch
 import com.hhuezo.pdfconverter.pdf.PdfTextSearcher
 import com.hhuezo.pdfconverter.util.PdfFileSaver
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -176,6 +180,7 @@ fun PdfReaderScreen(
     var showGoToPage by remember { mutableStateOf(false) }
     var toolsMenuExpanded by remember { mutableStateOf(false) }
     var isDownloadingCopy by remember { mutableStateOf(false) }
+    var isSharing by remember { mutableStateOf(false) }
     var pageInput by remember { mutableStateOf("") }
     var pageInputError by remember { mutableStateOf(false) }
     var renderWidthPx by remember { mutableIntStateOf(0) }
@@ -246,7 +251,7 @@ fun PdfReaderScreen(
     }
 
     fun downloadCopy() {
-        if (isDownloadingCopy || session == null) return
+        if (isDownloadingCopy || isSharing || session == null) return
         scope.launch {
             isDownloadingCopy = true
             val saved = withContext(Dispatchers.IO) {
@@ -268,6 +273,49 @@ fun PdfReaderScreen(
                     } else {
                         R.string.reader_download_error
                     },
+                ),
+            )
+        }
+    }
+
+    fun shareOpenPdf() {
+        if (isSharing || isDownloadingCopy || session == null) return
+        scope.launch {
+            isSharing = true
+            val shareUri = withContext(Dispatchers.IO) {
+                runCatching {
+                    val safeName = displayName
+                        .ifBlank { "documento.pdf" }
+                        .let { name ->
+                            if (name.endsWith(".pdf", ignoreCase = true)) name else "$name.pdf"
+                        }
+                        .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                    val cacheFile = File(context.cacheDir, "share_$safeName")
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        cacheFile.outputStream().use { output -> input.copyTo(output) }
+                    } ?: return@runCatching null
+                    FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        cacheFile,
+                    )
+                }.getOrNull()
+            }
+            isSharing = false
+            if (shareUri == null) {
+                snackbarHostState.showSnackbar(context.getString(R.string.reader_share_error))
+                return@launch
+            }
+            val share = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, shareUri)
+                clipData = ClipData.newUri(context.contentResolver, displayName, shareUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(
+                Intent.createChooser(
+                    share,
+                    context.getString(R.string.reader_share_title),
                 ),
             )
         }
@@ -492,8 +540,9 @@ fun PdfReaderScreen(
                             }
                             ReaderToolsMenu(
                                 expanded = toolsMenuExpanded,
-                                enabled = session != null && !isDownloadingCopy,
+                                enabled = session != null && !isDownloadingCopy && !isSharing,
                                 onDismiss = { toolsMenuExpanded = false },
+                                onShare = ::shareOpenPdf,
                                 onDownloadCopy = ::downloadCopy,
                                 onSignPdf = onSignPdf,
                                 onConvertToImage = onConvertToImage,
@@ -769,6 +818,7 @@ private fun ReaderToolsMenu(
     expanded: Boolean,
     enabled: Boolean,
     onDismiss: () -> Unit,
+    onShare: () -> Unit,
     onDownloadCopy: () -> Unit,
     onSignPdf: () -> Unit,
     onConvertToImage: () -> Unit,
@@ -780,6 +830,15 @@ private fun ReaderToolsMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
     ) {
+        ReaderToolsMenuItem(
+            icon = Icons.Outlined.Share,
+            label = stringResource(R.string.reader_share),
+            enabled = enabled,
+            onClick = {
+                onDismiss()
+                onShare()
+            },
+        )
         ReaderToolsMenuItem(
             icon = Icons.Outlined.Download,
             label = stringResource(R.string.reader_download_copy),
