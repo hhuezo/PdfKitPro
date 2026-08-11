@@ -259,6 +259,9 @@
     <string name="reader_share">Compartir</string>
     <string name="reader_share_title">Compartir PDF</string>
     <string name="reader_share_error">No se pudo compartir el PDF</string>
+    <string name="reader_reading_mode">Modo lectura</string>
+    <string name="reader_reading_mode_exit">Salir de modo lectura</string>
+    <string name="reader_reading_mode_hint">Toca la página para mostrar u ocultar los controles</string>
     <string name="reader_action_sign">Firmar</string>
     <string name="reader_action_image">Imagen</string>
     <string name="reader_action_delete_pages">Páginas</string>

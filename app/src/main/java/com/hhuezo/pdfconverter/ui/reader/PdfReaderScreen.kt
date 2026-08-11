@@ -1,10 +1,16 @@
 package com.hhuezo.pdfconverter.ui.reader
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -39,6 +45,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.ChromeReaderMode
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteSweep
@@ -118,6 +125,9 @@ import androidx.compose.ui.zIndex
 import android.graphics.Paint as AndroidPaint
 import android.graphics.RectF as AndroidRectF
 import androidx.core.content.FileProvider
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.R
@@ -192,6 +202,8 @@ fun PdfReaderScreen(
     var isSearching by remember { mutableStateOf(false) }
     var searchMessage by remember { mutableStateOf<String?>(null) }
     var hasActiveSearch by remember { mutableStateOf(false) }
+    var readingMode by remember { mutableStateOf(false) }
+    var controlsVisible by remember { mutableStateOf(true) }
 
     var textLayers by remember { mutableStateOf<Map<Int, PdfPageTextLayer>>(emptyMap()) }
     var textSelection by remember { mutableStateOf<PageTextSelection?>(null) }
@@ -237,6 +249,37 @@ fun PdfReaderScreen(
         searchQuery = ""
         clearSearchResults()
         keyboardController?.hide()
+    }
+
+    fun enterReadingMode() {
+        closeSearch()
+        clearTextSelection()
+        toolsMenuExpanded = false
+        showGoToPage = false
+        readingMode = true
+        controlsVisible = false
+        scope.launch {
+            snackbarHostState.showSnackbar(context.getString(R.string.reader_reading_mode_hint))
+        }
+    }
+
+    fun exitReadingMode() {
+        readingMode = false
+        controlsVisible = true
+    }
+
+    fun toggleReadingMode() {
+        if (readingMode) exitReadingMode() else enterReadingMode()
+    }
+
+    fun onPageTapped() {
+        if (textSelection != null) {
+            clearTextSelection()
+            return
+        }
+        if (readingMode) {
+            controlsVisible = !controlsVisible
+        }
     }
 
     fun copySelectedText() {
@@ -394,6 +437,36 @@ fun PdfReaderScreen(
         }
     }
 
+    val showChrome = !readingMode || controlsVisible
+
+    BackHandler(enabled = readingMode) {
+        if (!controlsVisible) {
+            controlsVisible = true
+        } else {
+            exitReadingMode()
+        }
+    }
+
+    val activity = context as? Activity
+    DisposableEffect(readingMode, controlsVisible) {
+        val window = activity?.window
+        if (window == null) {
+            return@DisposableEffect onDispose { }
+        }
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        val immersive = readingMode && !controlsVisible
+        if (immersive) {
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        }
+        onDispose {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
     val currentPage by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex
@@ -439,155 +512,184 @@ fun PdfReaderScreen(
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            Column {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                text = displayName,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            session?.let { doc ->
-                                val zoomLabel = if (scale > 1.01f) {
-                                    " · ${(scale * 100).roundToInt()}%"
-                                } else {
-                                    ""
-                                }
+            AnimatedVisibility(
+                visible = showChrome,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                Column {
+                    TopAppBar(
+                        title = {
+                            Column {
                                 Text(
-                                    text = stringResource(
-                                        R.string.reader_page_of,
-                                        currentPage + 1,
-                                        doc.pageCount,
-                                    ) + zoomLabel,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                                    text = displayName,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
                                 )
-                            }
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.reader_back),
-                            )
-                        }
-                    },
-                    actions = {
-                        if (scale > 1.01f) {
-                            IconButton(
-                                onClick = {
-                                    scale = MinZoom
-                                    offset = Offset.Zero
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.ZoomInMap,
-                                    contentDescription = stringResource(R.string.reader_zoom_reset),
-                                )
-                            }
-                        }
-                        IconButton(
-                            onClick = {
-                                if (searchVisible) {
-                                    closeSearch()
-                                } else {
-                                    searchVisible = true
-                                }
-                            },
-                            enabled = session != null,
-                        ) {
-                            Icon(
-                                imageVector = if (searchVisible) {
-                                    Icons.Outlined.Close
-                                } else {
-                                    Icons.Outlined.Search
-                                },
-                                contentDescription = stringResource(
-                                    if (searchVisible) {
-                                        R.string.reader_search_close
+                                session?.let { doc ->
+                                    val zoomLabel = if (scale > 1.01f) {
+                                        " · ${(scale * 100).roundToInt()}%"
                                     } else {
-                                        R.string.reader_search
+                                        ""
+                                    }
+                                    Text(
+                                        text = stringResource(
+                                            R.string.reader_page_of,
+                                            currentPage + 1,
+                                            doc.pageCount,
+                                        ) + zoomLabel,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                                    )
+                                }
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.reader_back),
+                                )
+                            }
+                        },
+                        actions = {
+                            if (scale > 1.01f) {
+                                IconButton(
+                                    onClick = {
+                                        scale = MinZoom
+                                        offset = Offset.Zero
                                     },
-                                ),
-                            )
-                        }
-                        IconButton(
-                            onClick = {
-                                pageInput = (currentPage + 1).toString()
-                                pageInputError = false
-                                showGoToPage = true
-                            },
-                            enabled = session != null,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.FindInPage,
-                                contentDescription = stringResource(R.string.reader_go_to_page),
-                            )
-                        }
-                        Box {
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.ZoomInMap,
+                                        contentDescription = stringResource(R.string.reader_zoom_reset),
+                                    )
+                                }
+                            }
                             IconButton(
-                                onClick = { toolsMenuExpanded = true },
+                                onClick = ::toggleReadingMode,
                                 enabled = session != null,
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.MoreVert,
-                                    contentDescription = stringResource(R.string.reader_more),
+                                    imageVector = Icons.AutoMirrored.Outlined.ChromeReaderMode,
+                                    contentDescription = stringResource(
+                                        if (readingMode) {
+                                            R.string.reader_reading_mode_exit
+                                        } else {
+                                            R.string.reader_reading_mode
+                                        },
+                                    ),
                                 )
                             }
-                            ReaderToolsMenu(
-                                expanded = toolsMenuExpanded,
-                                enabled = session != null && !isDownloadingCopy && !isSharing,
-                                onDismiss = { toolsMenuExpanded = false },
-                                onShare = ::shareOpenPdf,
-                                onDownloadCopy = ::downloadCopy,
-                                onSignPdf = onSignPdf,
-                                onConvertToImage = onConvertToImage,
-                                onDeletePages = onDeletePages,
-                                onReorderPages = onReorderPages,
-                                onRotatePages = onRotatePages,
-                            )
-                        }
-                    },
-                    colors = androsTopAppBarColors(),
-                )
-
-                AnimatedVisibility(visible = searchVisible) {
-                    SearchBar(
-                        query = searchQuery,
-                        onQueryChange = {
-                            searchQuery = it
-                            if (hasActiveSearch) clearSearchResults()
+                            IconButton(
+                                onClick = {
+                                    if (searchVisible) {
+                                        closeSearch()
+                                    } else {
+                                        searchVisible = true
+                                    }
+                                },
+                                enabled = session != null,
+                            ) {
+                                Icon(
+                                    imageVector = if (searchVisible) {
+                                        Icons.Outlined.Close
+                                    } else {
+                                        Icons.Outlined.Search
+                                    },
+                                    contentDescription = stringResource(
+                                        if (searchVisible) {
+                                            R.string.reader_search_close
+                                        } else {
+                                            R.string.reader_search
+                                        },
+                                    ),
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    pageInput = (currentPage + 1).toString()
+                                    pageInputError = false
+                                    showGoToPage = true
+                                },
+                                enabled = session != null,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.FindInPage,
+                                    contentDescription = stringResource(R.string.reader_go_to_page),
+                                )
+                            }
+                            Box {
+                                IconButton(
+                                    onClick = { toolsMenuExpanded = true },
+                                    enabled = session != null,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MoreVert,
+                                        contentDescription = stringResource(R.string.reader_more),
+                                    )
+                                }
+                                ReaderToolsMenu(
+                                    expanded = toolsMenuExpanded,
+                                    enabled = session != null && !isDownloadingCopy && !isSharing,
+                                    readingMode = readingMode,
+                                    onDismiss = { toolsMenuExpanded = false },
+                                    onToggleReadingMode = ::toggleReadingMode,
+                                    onShare = ::shareOpenPdf,
+                                    onDownloadCopy = ::downloadCopy,
+                                    onSignPdf = onSignPdf,
+                                    onConvertToImage = onConvertToImage,
+                                    onDeletePages = onDeletePages,
+                                    onReorderPages = onReorderPages,
+                                    onRotatePages = onRotatePages,
+                                )
+                            }
                         },
-                        onSearch = ::runSearch,
-                        isSearching = isSearching,
-                        enabled = session != null && !isSearching,
-                        focusRequester = searchFocusRequester,
+                        colors = androsTopAppBarColors(),
                     )
+
+                    AnimatedVisibility(visible = searchVisible) {
+                        SearchBar(
+                            query = searchQuery,
+                            onQueryChange = {
+                                searchQuery = it
+                                if (hasActiveSearch) clearSearchResults()
+                            },
+                            onSearch = ::runSearch,
+                            isSearching = isSearching,
+                            enabled = session != null && !isSearching,
+                            focusRequester = searchFocusRequester,
+                        )
+                    }
                 }
             }
         },
         bottomBar = {
-            when {
-                selectedText != null -> {
-                    TextSelectionBar(
-                        preview = selectedText!!,
-                        onCopy = ::copySelectedText,
-                        onClear = ::clearTextSelection,
-                    )
-                }
-                searchVisible && (hasActiveSearch || isSearching) -> {
-                    SearchResultsBar(
-                        isSearching = isSearching,
-                        matches = searchMatches,
-                        matchIndex = searchMatchIndex,
-                        message = searchMessage,
-                        onPrevious = { goToMatch(searchMatchIndex - 1) },
-                        onNext = { goToMatch(searchMatchIndex + 1) },
-                    )
+            AnimatedVisibility(
+                visible = showChrome,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                when {
+                    selectedText != null -> {
+                        TextSelectionBar(
+                            preview = selectedText!!,
+                            onCopy = ::copySelectedText,
+                            onClear = ::clearTextSelection,
+                        )
+                    }
+                    searchVisible && (hasActiveSearch || isSearching) -> {
+                        SearchResultsBar(
+                            isSearching = isSearching,
+                            matches = searchMatches,
+                            matchIndex = searchMatchIndex,
+                            message = searchMessage,
+                            onPrevious = { goToMatch(searchMatchIndex - 1) },
+                            onNext = { goToMatch(searchMatchIndex + 1) },
+                        )
+                    }
                 }
             }
         },
@@ -771,13 +873,36 @@ fun PdfReaderScreen(
                                 onSelectionChanged = { start, end ->
                                     updateTextSelection(pageIndex, start, end)
                                 },
-                                onClearSelection = ::clearTextSelection,
+                                onPageTap = ::onPageTapped,
                                 onAdjustingSelectionChange = { adjusting ->
                                     isAdjustingSelection = adjusting
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = if (pageSelection != null) 20.dp else 0.dp),
+                            )
+                        }
+                    }
+
+                    if (readingMode && !controlsVisible) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .navigationBarInsetPadding()
+                                .padding(bottom = 20.dp),
+                            shape = RoundedCornerShape(50),
+                            color = Color.Black.copy(alpha = 0.55f),
+                            shadowElevation = 2.dp,
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    R.string.reader_page_of,
+                                    currentPage + 1,
+                                    doc.pageCount,
+                                ),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                             )
                         }
                     }
@@ -817,7 +942,9 @@ fun PdfReaderScreen(
 private fun ReaderToolsMenu(
     expanded: Boolean,
     enabled: Boolean,
+    readingMode: Boolean,
     onDismiss: () -> Unit,
+    onToggleReadingMode: () -> Unit,
     onShare: () -> Unit,
     onDownloadCopy: () -> Unit,
     onSignPdf: () -> Unit,
@@ -830,6 +957,21 @@ private fun ReaderToolsMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
     ) {
+        ReaderToolsMenuItem(
+            icon = Icons.AutoMirrored.Outlined.ChromeReaderMode,
+            label = stringResource(
+                if (readingMode) {
+                    R.string.reader_reading_mode_exit
+                } else {
+                    R.string.reader_reading_mode
+                },
+            ),
+            enabled = enabled,
+            onClick = {
+                onDismiss()
+                onToggleReadingMode()
+            },
+        )
         ReaderToolsMenuItem(
             icon = Icons.Outlined.Share,
             label = stringResource(R.string.reader_share),
@@ -1126,7 +1268,7 @@ private fun PdfPageItem(
     selection: PageTextSelection?,
     selectionRects: List<PdfHighlightRect>,
     onSelectionChanged: (startIndex: Int, endIndex: Int) -> Unit,
-    onClearSelection: () -> Unit,
+    onPageTap: () -> Unit,
     onAdjustingSelectionChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1138,7 +1280,7 @@ private fun PdfPageItem(
     val latestLayer by rememberUpdatedState(textLayer)
     val latestSelection by rememberUpdatedState(selection)
     val latestOnSelectionChanged by rememberUpdatedState(onSelectionChanged)
-    val latestOnClearSelection by rememberUpdatedState(onClearSelection)
+    val latestOnPageTap by rememberUpdatedState(onPageTap)
     val latestOnAdjustingSelectionChange by rememberUpdatedState(onAdjustingSelectionChange)
     // Anchor word preserved while expanding with the initial long-press drag.
     var dragWordStart by remember(pageIndex) { mutableIntStateOf(-1) }
@@ -1185,7 +1327,7 @@ private fun PdfPageItem(
                     .clip(pageShape)
                     .pointerInput(pageIndex) {
                         detectTapGestures(
-                            onTap = { latestOnClearSelection() },
+                            onTap = { latestOnPageTap() },
                         )
                     }
                     .pointerInput(pageIndex) {
