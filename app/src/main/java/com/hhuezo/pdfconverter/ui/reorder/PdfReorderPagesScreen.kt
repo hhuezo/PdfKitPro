@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,14 +27,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
-import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Reorder
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Save
@@ -62,14 +64,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.hhuezo.pdfconverter.R
@@ -84,6 +90,8 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private enum class ReorderUiState {
     Idle,
@@ -202,7 +210,8 @@ fun PdfReorderPagesScreen(
     fun movePage(from: Int, to: Int) {
         if (uiState == ReorderUiState.Processing) return
         if (pageOrder.size <= 1) return
-        if (to !in pageOrder.indices) return
+        if (from !in pageOrder.indices || to !in pageOrder.indices) return
+        if (from == to) return
         val mutable = pageOrder.toMutableList()
         val item = mutable.removeAt(from)
         mutable.add(to, item)
@@ -459,57 +468,100 @@ fun PdfReorderPagesScreen(
             else -> {
                 val doc = session!!
                 val isSinglePage = pageCount <= 1
-                LazyColumn(
+                val canReorder = !isSinglePage && uiState != ReorderUiState.Processing
+                val haptic = LocalHapticFeedback.current
+                val lazyListState = rememberLazyListState()
+                val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
+                    // Solo hay ítems de página en la lista (el encabezado va fuera).
+                    movePage(from.index, to.index)
+                    haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                }
+
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
-                    contentPadding = PaddingValues(
-                        horizontal = 12.dp,
-                        vertical = 12.dp,
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 4.dp, vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            if (isSinglePage) {
-                                SinglePageBlockedBanner(
-                                    message = stringResource(R.string.reorder_pages_single_page),
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        if (isSinglePage) {
+                            SinglePageBlockedBanner(
+                                message = stringResource(R.string.reorder_pages_single_page),
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.reorder_pages_tap_hint),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = stringResource(R.string.reorder_pages_info),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            )
+                        }
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        state = lazyListState,
+                        contentPadding = PaddingValues(
+                            horizontal = 12.dp,
+                            vertical = 8.dp,
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        itemsIndexed(
+                            items = pageOrder,
+                            key = { _, originalIndex -> originalIndex },
+                        ) { position, originalIndex ->
+                            ReorderableItem(
+                                state = reorderableLazyListState,
+                                key = originalIndex,
+                                enabled = canReorder,
+                            ) { isDragging ->
+                                val elevation by animateDpAsState(
+                                    targetValue = if (isDragging) 6.dp else 0.dp,
+                                    label = "reorderElevation",
                                 )
-                            } else {
-                                Text(
-                                    text = stringResource(R.string.reorder_pages_tap_hint),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Text(
-                                    text = stringResource(R.string.reorder_pages_info),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                ReorderPageRow(
+                                    session = doc,
+                                    originalPageIndex = originalIndex,
+                                    newPosition = position + 1,
+                                    moved = originalIndex != position,
+                                    isDragging = isDragging,
+                                    dragEnabled = canReorder,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .zIndex(if (isDragging) 1f else 0f)
+                                        .shadow(elevation, RoundedCornerShape(16.dp))
+                                        .then(
+                                            if (canReorder) {
+                                                Modifier.longPressDraggableHandle(
+                                                    onDragStarted = {
+                                                        haptic.performHapticFeedback(
+                                                            HapticFeedbackType.GestureThresholdActivate,
+                                                        )
+                                                    },
+                                                    onDragStopped = {
+                                                        haptic.performHapticFeedback(
+                                                            HapticFeedbackType.GestureEnd,
+                                                        )
+                                                    },
+                                                )
+                                            } else {
+                                                Modifier
+                                            },
+                                        ),
                                 )
                             }
                         }
-                    }
-                    itemsIndexed(
-                        items = pageOrder,
-                        key = { _, originalIndex -> originalIndex },
-                    ) { position, originalIndex ->
-                        ReorderPageRow(
-                            session = doc,
-                            originalPageIndex = originalIndex,
-                            newPosition = position + 1,
-                            moved = originalIndex != position,
-                            canMoveUp = !isSinglePage && position > 0,
-                            canMoveDown = !isSinglePage && position < pageOrder.lastIndex,
-                            enabled = !isSinglePage && uiState != ReorderUiState.Processing,
-                            onMoveUp = { movePage(position, position - 1) },
-                            onMoveDown = { movePage(position, position + 1) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
                     }
                 }
             }
@@ -523,11 +575,8 @@ private fun ReorderPageRow(
     originalPageIndex: Int,
     newPosition: Int,
     moved: Boolean,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    enabled: Boolean,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
+    isDragging: Boolean,
+    dragEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var bitmap by remember(originalPageIndex) { mutableStateOf<Bitmap?>(null) }
@@ -540,17 +589,36 @@ private fun ReorderPageRow(
     }
 
     val shape = RoundedCornerShape(16.dp)
-    val borderColor = if (moved) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outlineVariant
+    val containerColor by animateColorAsState(
+        targetValue = when {
+            isDragging -> MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+            moved -> MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+            else -> MaterialTheme.colorScheme.surface
+        },
+        label = "reorderContainer",
+    )
+    val borderColor by animateColorAsState(
+        targetValue = when {
+            isDragging -> MaterialTheme.colorScheme.primary
+            moved -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.outlineVariant
+        },
+        label = "reorderBorder",
+    )
+    val borderWidth by animateDpAsState(
+        targetValue = if (isDragging) 2.dp else 1.dp,
+        label = "reorderBorderWidth",
+    )
+    val accentColor = when {
+        isDragging || moved -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Row(
         modifier = modifier
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, borderColor, shape)
+            .background(containerColor)
+            .border(borderWidth, borderColor, shape)
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -559,11 +627,7 @@ private fun ReorderPageRow(
             text = newPosition.toString(),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = if (moved) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
+            color = accentColor,
             modifier = Modifier.width(36.dp),
         )
 
@@ -607,26 +671,12 @@ private fun ReorderPageRow(
             )
         }
 
-        Column {
-            IconButton(
-                onClick = onMoveUp,
-                enabled = enabled && canMoveUp,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.KeyboardArrowUp,
-                    contentDescription = stringResource(R.string.reorder_pages_move_up),
-                )
-            }
-            IconButton(
-                onClick = onMoveDown,
-                enabled = enabled && canMoveDown,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.KeyboardArrowDown,
-                    contentDescription = stringResource(R.string.reorder_pages_move_down),
-                )
-            }
-        }
+        Icon(
+            imageVector = Icons.Outlined.DragHandle,
+            contentDescription = stringResource(R.string.reorder_pages_drag_handle),
+            tint = if (dragEnabled) accentColor else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+            modifier = Modifier.size(28.dp),
+        )
     }
 }
 

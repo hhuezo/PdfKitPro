@@ -17,7 +17,8 @@
     <string name="reorder_pages">Reordenar páginas</string>
     <string name="reorder_pages_subtitle">Cambiar el orden del PDF</string>
     <string name="reorder_pages_title">Reordenar páginas</string>
-    <string name="reorder_pages_tap_hint">Usa las flechas para subir o bajar cada página. El número grande es la posición nueva.</string>
+    <string name="reorder_pages_tap_hint">Mantén pulsada una tarjeta y arrástrala a su nueva posición. El número grande es la posición nueva.</string>
+    <string name="reorder_pages_drag_handle">Arrastrar página</string>
     <string name="reorder_pages_info">Se guarda el documento completo con el nuevo orden. Puedes sobrescribir el original o descargar una copia.</string>
     <string name="reorder_pages_selection_meta">Nuevo orden · %1$d páginas</string>
     <string name="reorder_pages_changed_meta">Orden modificado · %1$d páginas</string>
@@ -175,6 +176,7 @@
     <string name="about_oss_mlkit">ML Kit Document Scanner</string>
     <string name="about_oss_datastore">AndroidX DataStore</string>
     <string name="about_oss_kotlin">Kotlin</string>
+    <string name="about_oss_reorderable">Reorderable (Compose)</string>
     <string name="about_copyright">© 2026 PdfKit Pro. Todos los derechos reservados.</string>
     <string name="no_recent_files">Aún no hay archivos recientes</string>
     <string name="no_recent_files_hint">Abre un PDF para verlo aquí</string>

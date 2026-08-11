@@ -119,6 +119,10 @@ fun AboutScreen(
                 nameRes = R.string.about_oss_kotlin,
                 licenseUrl = "https://github.com/JetBrains/kotlin/blob/master/license/LICENSE.txt",
             ),
+            OpenSourceCredit(
+                nameRes = R.string.about_oss_reorderable,
+                licenseUrl = "https://github.com/Calvin-LL/Reorderable/blob/main/LICENSE",
+            ),
         )
     }
 

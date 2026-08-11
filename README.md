@@ -12,7 +12,7 @@ Aplicación Android para leer, convertir, firmar, unir, escanear y editar archiv
 | **PDF a imagen** | Convierte páginas a JPG o PNG, con rango personalizado |
 | **Firmar PDF** | Firma dibujada, iniciales, texto y fecha sobre el documento |
 | **Rotar páginas** | Gira páginas individualmente (90°, 180°) y guarda el PDF completo |
-| **Reordenar páginas** | Cambia el orden de las páginas y genera un documento nuevo |
+| **Reordenar páginas** | Arrastra las páginas (drag and drop) para cambiar el orden y genera un documento nuevo |
 | **Eliminar páginas** | Marca páginas (incluye detección de páginas en blanco) y genera un PDF nuevo |
 | **Unir PDFs** | Combina varios archivos en uno solo, con orden configurable |
 | **Escanear a PDF** | Escaneo con detección de bordes (ML Kit) o imágenes desde galería |

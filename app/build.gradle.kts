@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.tom.roush.pdfbox.android)
     implementation(libs.androidx.exifinterface)
     implementation(libs.play.services.mlkit.document.scanner)
+    implementation(libs.reorderable)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
