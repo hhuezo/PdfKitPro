@@ -197,6 +197,7 @@ fun PdfReaderScreen(
     val latestScale by rememberUpdatedState(scale)
     val latestOffset by rememberUpdatedState(offset)
     val latestIsAdjustingSelection by rememberUpdatedState(isAdjustingSelection)
+    val latestListState by rememberUpdatedState(listState)
 
     val selectedText = remember(textSelection, textLayers) {
         val selection = textSelection ?: return@remember null
@@ -603,6 +604,25 @@ fun PdfReaderScreen(
 
                     val isZoomed = scale > 1.01f
 
+                    fun panWithDocumentScroll(
+                        panChange: Offset,
+                        currentScale: Float,
+                        currentOffset: Offset,
+                    ): Offset {
+                        val maxX = (viewportWidthPx * (currentScale - 1f)) / 2f
+                        val maxY = (viewportHeightPx * (currentScale - 1f)) / 2f
+                        val proposedX = currentOffset.x + panChange.x
+                        val proposedY = currentOffset.y + panChange.y
+                        val clampedX = proposedX.coerceIn(-maxX, maxX)
+                        val clampedY = proposedY.coerceIn(-maxY, maxY)
+                        // Al llegar al borde del pan, el exceso mueve el documento (LazyColumn).
+                        val excessY = proposedY - clampedY
+                        if (excessY != 0f && currentScale > 1.01f) {
+                            latestListState.dispatchRawDelta(-excessY / currentScale)
+                        }
+                        return Offset(clampedX, clampedY)
+                    }
+
                     LazyColumn(
                         state = listState,
                         userScrollEnabled = !isZoomed && !isAdjustingSelection,
@@ -622,16 +642,11 @@ fun PdfReaderScreen(
                                                 (latestScale * zoomChange)
                                                     .coerceIn(MinZoom, MaxZoom)
 
-                                            val maxX =
-                                                (viewportWidthPx * (newScale - 1f)) / 2f
-                                            val maxY =
-                                                (viewportHeightPx * (newScale - 1f)) / 2f
                                             val newOffset = if (newScale > 1.01f) {
-                                                Offset(
-                                                    x = (latestOffset.x + panChange.x)
-                                                        .coerceIn(-maxX, maxX),
-                                                    y = (latestOffset.y + panChange.y)
-                                                        .coerceIn(-maxY, maxY),
+                                                panWithDocumentScroll(
+                                                    panChange = panChange,
+                                                    currentScale = newScale,
+                                                    currentOffset = latestOffset,
                                                 )
                                             } else {
                                                 Offset.Zero
@@ -658,15 +673,10 @@ fun PdfReaderScreen(
                                             pressed.none { it.isConsumed }
                                         ) {
                                             val panChange = event.calculatePan()
-                                            val maxX =
-                                                (viewportWidthPx * (latestScale - 1f)) / 2f
-                                            val maxY =
-                                                (viewportHeightPx * (latestScale - 1f)) / 2f
-                                            offset = Offset(
-                                                x = (latestOffset.x + panChange.x)
-                                                    .coerceIn(-maxX, maxX),
-                                                y = (latestOffset.y + panChange.y)
-                                                    .coerceIn(-maxY, maxY),
+                                            offset = panWithDocumentScroll(
+                                                panChange = panChange,
+                                                currentScale = latestScale,
+                                                currentOffset = latestOffset,
                                             )
                                             pressed.forEach { it.consume() }
                                         }

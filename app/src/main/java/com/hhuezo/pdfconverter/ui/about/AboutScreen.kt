@@ -56,10 +56,6 @@ import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 
-private const val DeveloperGithubUrl = "https://github.com/hhuezo/PdfKitPro"
-private const val DeveloperLinkedInUrl =
-    "https://www.linkedin.com/in/hugo-alexander-huezo-barahona-721b89213/"
-
 private val GithubBrand = Color(0xFF24292F)
 private val GithubBrandContainer = Color(0xFFF3F4F6)
 private val LinkedInBrand = Color(0xFF0A66C2)
@@ -128,7 +124,11 @@ fun AboutScreen(
 
     fun openUrl(url: String) {
         runCatching {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                addCategory(Intent.CATEGORY_BROWSABLE)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
         }
     }
 
@@ -169,8 +169,12 @@ fun AboutScreen(
             AppIdentitySection(versionLabel = versionLabel)
 
             DeveloperSection(
-                onOpenGithub = { openUrl(DeveloperGithubUrl) },
-                onOpenLinkedIn = { openUrl(DeveloperLinkedInUrl) },
+                onOpenGithub = {
+                    openUrl(context.getString(R.string.about_github_url))
+                },
+                onOpenLinkedIn = {
+                    openUrl(context.getString(R.string.about_linkedin_url))
+                },
             )
 
             OpenSourceSection(

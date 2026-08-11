@@ -165,6 +165,8 @@
     <string name="about_developer_role">Desarrollador Full Stack</string>
     <string name="about_github">GitHub</string>
     <string name="about_linkedin">LinkedIn</string>
+    <string name="about_github_url">https://github.com/hhuezo/PdfKitPro</string>
+    <string name="about_linkedin_url">https://www.linkedin.com/in/hugo-alexander-huezo-barahona-721b89213/</string>
     <string name="about_thanks_section">Agradecimientos</string>
     <string name="about_thanks_body">PdfKit Pro es posible gracias a estos proyectos de código abierto:</string>
     <string name="about_license">Licencia</string>
