@@ -249,6 +249,9 @@
     <string name="reader_reorder_pages">Reordenar páginas</string>
     <string name="reader_rotate_pages">Rotar páginas</string>
     <string name="reader_more">Más opciones</string>
+    <string name="reader_download_copy">Guardar copia</string>
+    <string name="reader_download_success">Copia guardada en Descargas/PdfKit Pro</string>
+    <string name="reader_download_error">No se pudo descargar la copia</string>
     <string name="reader_action_sign">Firmar</string>
     <string name="reader_action_image">Imagen</string>
     <string name="reader_action_delete_pages">Páginas</string>

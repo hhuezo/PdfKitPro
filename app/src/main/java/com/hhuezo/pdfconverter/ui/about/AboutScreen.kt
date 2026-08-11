@@ -56,7 +56,7 @@ import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 
-private const val DeveloperGithubUrl = "https://github.com/hhuezo"
+private const val DeveloperGithubUrl = "https://github.com/hhuezo/PdfKitPro"
 private const val DeveloperLinkedInUrl =
     "https://www.linkedin.com/in/hugo-alexander-huezo-barahona-721b89213/"
 

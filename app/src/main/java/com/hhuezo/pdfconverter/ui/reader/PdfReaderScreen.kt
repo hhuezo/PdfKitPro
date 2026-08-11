@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
@@ -41,11 +40,11 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Draw
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FindInPage
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Reorder
 import androidx.compose.material.icons.outlined.Rotate90DegreesCw
 import androidx.compose.material.icons.outlined.Search
@@ -53,6 +52,8 @@ import androidx.compose.material.icons.outlined.ZoomInMap
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -122,6 +123,7 @@ import com.hhuezo.pdfconverter.pdf.PdfHighlightRect
 import com.hhuezo.pdfconverter.pdf.PdfPageTextLayer
 import com.hhuezo.pdfconverter.pdf.PdfSearchMatch
 import com.hhuezo.pdfconverter.pdf.PdfTextSearcher
+import com.hhuezo.pdfconverter.util.PdfFileSaver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -172,7 +174,8 @@ fun PdfReaderScreen(
     var scale by remember { mutableFloatStateOf(MinZoom) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var showGoToPage by remember { mutableStateOf(false) }
-    var actionsBarVisible by remember { mutableStateOf(true) }
+    var toolsMenuExpanded by remember { mutableStateOf(false) }
+    var isDownloadingCopy by remember { mutableStateOf(false) }
     var pageInput by remember { mutableStateOf("") }
     var pageInputError by remember { mutableStateOf(false) }
     var renderWidthPx by remember { mutableIntStateOf(0) }
@@ -238,6 +241,34 @@ fun PdfReaderScreen(
                 ClipEntry(ClipData.newPlainText("PDF", text)),
             )
             snackbarHostState.showSnackbar(context.getString(R.string.reader_copied))
+        }
+    }
+
+    fun downloadCopy() {
+        if (isDownloadingCopy || session == null) return
+        scope.launch {
+            isDownloadingCopy = true
+            val saved = withContext(Dispatchers.IO) {
+                val baseName = displayName
+                    .removeSuffix(".pdf")
+                    .removeSuffix(".PDF")
+                    .ifBlank { "documento" }
+                PdfFileSaver.saveUriToDownloads(
+                    context = context,
+                    sourceUri = uri,
+                    displayName = "${baseName}_copia.pdf",
+                )
+            }
+            isDownloadingCopy = false
+            snackbarHostState.showSnackbar(
+                context.getString(
+                    if (saved != null) {
+                        R.string.reader_download_success
+                    } else {
+                        R.string.reader_download_error
+                    },
+                ),
+            )
         }
     }
 
@@ -448,38 +479,31 @@ fun PdfReaderScreen(
                                 contentDescription = stringResource(R.string.reader_go_to_page),
                             )
                         }
-                        IconButton(
-                            onClick = { actionsBarVisible = !actionsBarVisible },
-                        ) {
-                            Icon(
-                                imageVector = if (actionsBarVisible) {
-                                    Icons.Outlined.ExpandLess
-                                } else {
-                                    Icons.Outlined.ExpandMore
-                                },
-                                contentDescription = stringResource(
-                                    if (actionsBarVisible) {
-                                        R.string.reader_actions_hide
-                                    } else {
-                                        R.string.reader_actions_show
-                                    },
-                                ),
+                        Box {
+                            IconButton(
+                                onClick = { toolsMenuExpanded = true },
+                                enabled = session != null,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = stringResource(R.string.reader_more),
+                                )
+                            }
+                            ReaderToolsMenu(
+                                expanded = toolsMenuExpanded,
+                                enabled = session != null && !isDownloadingCopy,
+                                onDismiss = { toolsMenuExpanded = false },
+                                onDownloadCopy = ::downloadCopy,
+                                onSignPdf = onSignPdf,
+                                onConvertToImage = onConvertToImage,
+                                onDeletePages = onDeletePages,
+                                onReorderPages = onReorderPages,
+                                onRotatePages = onRotatePages,
                             )
                         }
                     },
                     colors = androsTopAppBarColors(),
                 )
-
-                AnimatedVisibility(visible = actionsBarVisible) {
-                    ReaderActionsBar(
-                        enabled = session != null,
-                        onSignPdf = onSignPdf,
-                        onConvertToImage = onConvertToImage,
-                        onDeletePages = onDeletePages,
-                        onReorderPages = onReorderPages,
-                        onRotatePages = onRotatePages,
-                    )
-                }
 
                 AnimatedVisibility(visible = searchVisible) {
                     SearchBar(
@@ -731,106 +755,96 @@ fun PdfReaderScreen(
 }
 
 @Composable
-private fun ReaderActionsBar(
+private fun ReaderToolsMenu(
+    expanded: Boolean,
     enabled: Boolean,
+    onDismiss: () -> Unit,
+    onDownloadCopy: () -> Unit,
     onSignPdf: () -> Unit,
     onConvertToImage: () -> Unit,
     onDeletePages: () -> Unit,
     onReorderPages: () -> Unit,
     onRotatePages: () -> Unit,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.Top,
-        ) {
-            ReaderActionItem(
-                icon = Icons.Outlined.Draw,
-                label = stringResource(R.string.reader_action_sign),
-                contentDescription = stringResource(R.string.reader_sign),
-                enabled = enabled,
-                onClick = onSignPdf,
-                modifier = Modifier.weight(1f),
-            )
-            ReaderActionItem(
-                icon = Icons.Outlined.Image,
-                label = stringResource(R.string.reader_action_image),
-                contentDescription = stringResource(R.string.reader_convert_to_image),
-                enabled = enabled,
-                onClick = onConvertToImage,
-                modifier = Modifier.weight(1f),
-            )
-            ReaderActionItem(
-                icon = Icons.Outlined.Rotate90DegreesCw,
-                label = stringResource(R.string.reader_action_rotate),
-                contentDescription = stringResource(R.string.reader_rotate_pages),
-                enabled = enabled,
-                onClick = onRotatePages,
-                modifier = Modifier.weight(1f),
-            )
-            ReaderActionItem(
-                icon = Icons.Outlined.Reorder,
-                label = stringResource(R.string.reader_action_reorder),
-                contentDescription = stringResource(R.string.reader_reorder_pages),
-                enabled = enabled,
-                onClick = onReorderPages,
-                modifier = Modifier.weight(1f),
-            )
-            ReaderActionItem(
-                icon = Icons.Outlined.DeleteSweep,
-                label = stringResource(R.string.reader_action_delete_pages),
-                contentDescription = stringResource(R.string.reader_delete_pages),
-                enabled = enabled,
-                onClick = onDeletePages,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        ReaderToolsMenuItem(
+            icon = Icons.Outlined.Download,
+            label = stringResource(R.string.reader_download_copy),
+            enabled = enabled,
+            onClick = {
+                onDismiss()
+                onDownloadCopy()
+            },
+        )
+        ReaderToolsMenuItem(
+            icon = Icons.Outlined.Draw,
+            label = stringResource(R.string.reader_sign),
+            enabled = enabled,
+            onClick = {
+                onDismiss()
+                onSignPdf()
+            },
+        )
+        ReaderToolsMenuItem(
+            icon = Icons.Outlined.Image,
+            label = stringResource(R.string.reader_convert_to_image),
+            enabled = enabled,
+            onClick = {
+                onDismiss()
+                onConvertToImage()
+            },
+        )
+        ReaderToolsMenuItem(
+            icon = Icons.Outlined.Rotate90DegreesCw,
+            label = stringResource(R.string.reader_rotate_pages),
+            enabled = enabled,
+            onClick = {
+                onDismiss()
+                onRotatePages()
+            },
+        )
+        ReaderToolsMenuItem(
+            icon = Icons.Outlined.Reorder,
+            label = stringResource(R.string.reader_reorder_pages),
+            enabled = enabled,
+            onClick = {
+                onDismiss()
+                onReorderPages()
+            },
+        )
+        ReaderToolsMenuItem(
+            icon = Icons.Outlined.DeleteSweep,
+            label = stringResource(R.string.reader_delete_pages),
+            enabled = enabled,
+            onClick = {
+                onDismiss()
+                onDeletePages()
+            },
+        )
     }
 }
 
 @Composable
-private fun ReaderActionItem(
+private fun ReaderToolsMenuItem(
     icon: ImageVector,
     label: String,
-    contentDescription: String,
     enabled: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    labelColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
-    val disabledAlpha = 0.38f
-    val iconTint = if (enabled) tint else tint.copy(alpha = disabledAlpha)
-    val textColor = if (enabled) labelColor else labelColor.copy(alpha = disabledAlpha)
-
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = iconTint,
-            modifier = Modifier.size(24.dp),
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = textColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+    DropdownMenuItem(
+        text = { Text(text = label) },
+        onClick = onClick,
+        enabled = enabled,
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+            )
+        },
+    )
 }
 
 @Composable

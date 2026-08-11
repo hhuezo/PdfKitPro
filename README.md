@@ -2,22 +2,34 @@
 
 Aplicación Android para leer, convertir, firmar, unir, escanear y editar archivos PDF. Todo el procesamiento ocurre **en tu dispositivo**: sin publicidad, sin cuentas y sin enviar documentos a servidores.
 
+**Versión actual:** 1.1.1
+
 ## Características
 
 | Herramienta | Descripción |
 |---|---|
-| **Leer PDF** | Visor con zoom, búsqueda de texto, ir a página y recuerdo de la última página leída |
+| **Leer PDF** | Visor con zoom, búsqueda de texto, ir a página, selección/copia de texto y recuerdo de la última página leída |
 | **PDF a imagen** | Convierte páginas a JPG o PNG, con rango personalizado |
 | **Firmar PDF** | Firma dibujada, iniciales, texto y fecha sobre el documento |
-| **Eliminar páginas** | Marca páginas y genera un PDF nuevo sin modificar el original |
+| **Rotar páginas** | Gira páginas individualmente (90°, 180°) y guarda el PDF completo |
+| **Reordenar páginas** | Cambia el orden de las páginas y genera un documento nuevo |
+| **Eliminar páginas** | Marca páginas (incluye detección de páginas en blanco) y genera un PDF nuevo |
 | **Unir PDFs** | Combina varios archivos en uno solo, con orden configurable |
 | **Escanear a PDF** | Escaneo con detección de bordes (ML Kit) o imágenes desde galería |
+
+### Visor PDF
+
+- Menú de herramientas (⋮): descargar copia, firmar, convertir a imagen, rotar, reordenar y eliminar páginas
+- **Descargar copia** del documento abierto en `Descargas/PdfKit Pro`
+- Zoom, búsqueda, ir a página y copia de texto seleccionado
 
 ### Otras funciones
 
 - Archivos recientes con nombre, tamaño y fecha
 - Abrir PDFs desde el administrador de archivos o con **Abrir con / Compartir**
-- Guardar resultados en `Descargas/PdfKit Pro` e imágenes en `Imágenes/PdfKit Pro`
+- Guardar sobre el original (si hay permiso de escritura) o como copia en Descargas
+- Resultados en `Descargas/PdfKit Pro` e imágenes en `Imágenes/PdfKit Pro`
+- Pantalla **Acerca de** con versión, datos del desarrollador y créditos open source
 - Interfaz en español con Jetpack Compose y Material 3
 
 ## Privacidad
@@ -28,6 +40,10 @@ Aplicación Android para leer, convertir, firmar, unir, escanear y editar archiv
 
 Consulta la [política de privacidad](PRIVACY_POLICY.md) para más detalle.
 
+## Licencia
+
+Este proyecto está bajo la licencia [MIT](LICENSE).
+
 ## Requisitos
 
 - Android 7.0 (API 24) o superior
@@ -36,8 +52,8 @@ Consulta la [política de privacidad](PRIVACY_POLICY.md) para más detalle.
 ## Compilar el proyecto
 
 ```bash
-git clone https://github.com/hhuezo/totalPdf.git
-cd totalPdf
+git clone https://github.com/hhuezo/PdfKitPro.git
+cd PdfKitPro
 ./gradlew assembleDebug
 ```
 
@@ -74,12 +90,14 @@ Luego:
 app/src/main/java/com/hhuezo/pdfconverter/
 ├── MainActivity.kt          # Navegación principal
 ├── data/                    # Repositorio de recientes
-├── pdf/                     # Lógica PDF (unir, firmar, convertir…)
+├── pdf/                     # Lógica PDF (unir, firmar, rotar, reordenar…)
 ├── ui/
+│   ├── about/               # Acerca de / créditos
 │   ├── home/                # Inicio y recientes
 │   ├── reader/              # Lector PDF
 │   ├── tools/               # Pantalla de herramientas
-│   ├── sign/ merge/ scan/ …  # Flujos por herramienta
+│   ├── sign/ merge/ scan/   # Flujos por herramienta
+│   ├── rotate/ reorder/ …   # Edición de páginas
 │   └── theme/               # Colores y tipografía
 └── util/                    # Guardado, permisos, utilidades
 ```
@@ -95,8 +113,10 @@ El acceso a PDFs e imágenes se realiza mediante el selector de archivos del sis
 
 ## Contacto
 
-- **Issues:** [github.com/hhuezo/totalPdf/issues](https://github.com/hhuezo/totalPdf/issues)
-- **Autor:** [hhuezo](https://github.com/hhuezo)
+- **Repositorio:** [github.com/hhuezo/PdfKitPro](https://github.com/hhuezo/PdfKitPro)
+- **Issues:** [github.com/hhuezo/PdfKitPro/issues](https://github.com/hhuezo/PdfKitPro/issues)
+- **Autor:** [Hugo Alexander Huezo Barahona](https://github.com/hhuezo)
+- **LinkedIn:** [hugo-alexander-huezo-barahona](https://www.linkedin.com/in/hugo-alexander-huezo-barahona-721b89213/)
 
 ---
 

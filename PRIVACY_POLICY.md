@@ -5,7 +5,7 @@
 PdfKit Pro («la aplicación», «nosotros») es una aplicación para Android desarrollada por [hhuezo](https://github.com/hhuezo). Esta política describe qué información se utiliza, cómo se trata y qué derechos tienes como usuario.
 
 Si tienes preguntas sobre esta política, puedes contactarnos abriendo un issue en GitHub:  
-https://github.com/hhuezo/totalPdf/issues
+https://github.com/hhuezo/PdfKitPro/issues
 
 ---
 
@@ -126,8 +126,8 @@ Podemos actualizar esta política para reflejar cambios en la aplicación o requ
 ## 11. Contacto
 
 **Desarrollador:** hhuezo  
-**Repositorio:** https://github.com/hhuezo/totalPdf  
-**Contacto:** https://github.com/hhuezo/totalPdf/issues
+**Repositorio:** https://github.com/hhuezo/PdfKitPro  
+**Contacto:** https://github.com/hhuezo/PdfKitPro/issues
 
 ---
 
