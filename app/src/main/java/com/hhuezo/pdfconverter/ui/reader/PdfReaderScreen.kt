@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -204,6 +205,7 @@ fun PdfReaderScreen(
     var hasActiveSearch by remember { mutableStateOf(false) }
     var readingMode by remember { mutableStateOf(false) }
     var controlsVisible by remember { mutableStateOf(true) }
+    var ignorePageTapsUntilElapsedRealtime by remember { mutableStateOf(0L) }
 
     var textLayers by remember { mutableStateOf<Map<Int, PdfPageTextLayer>>(emptyMap()) }
     var textSelection by remember { mutableStateOf<PageTextSelection?>(null) }
@@ -256,16 +258,16 @@ fun PdfReaderScreen(
         clearTextSelection()
         toolsMenuExpanded = false
         showGoToPage = false
+        // Evita que el toque del botón, al ocultarse la barra, salga del modo al instante.
+        ignorePageTapsUntilElapsedRealtime = SystemClock.elapsedRealtime() + 450L
         readingMode = true
         controlsVisible = false
-        scope.launch {
-            snackbarHostState.showSnackbar(context.getString(R.string.reader_reading_mode_hint))
-        }
     }
 
     fun exitReadingMode() {
         readingMode = false
         controlsVisible = true
+        ignorePageTapsUntilElapsedRealtime = 0L
     }
 
     fun toggleReadingMode() {
@@ -277,9 +279,10 @@ fun PdfReaderScreen(
             clearTextSelection()
             return
         }
-        if (readingMode) {
-            controlsVisible = !controlsVisible
-        }
+        if (!readingMode) return
+        if (SystemClock.elapsedRealtime() < ignorePageTapsUntilElapsedRealtime) return
+        // Tocar la página sale del modo lectura (no solo muestra controles).
+        exitReadingMode()
     }
 
     fun copySelectedText() {
@@ -440,11 +443,7 @@ fun PdfReaderScreen(
     val showChrome = !readingMode || controlsVisible
 
     BackHandler(enabled = readingMode) {
-        if (!controlsVisible) {
-            controlsVisible = true
-        } else {
-            exitReadingMode()
-        }
+        exitReadingMode()
     }
 
     val activity = context as? Activity
@@ -634,9 +633,7 @@ fun PdfReaderScreen(
                                 ReaderToolsMenu(
                                     expanded = toolsMenuExpanded,
                                     enabled = session != null && !isDownloadingCopy && !isSharing,
-                                    readingMode = readingMode,
                                     onDismiss = { toolsMenuExpanded = false },
-                                    onToggleReadingMode = ::toggleReadingMode,
                                     onShare = ::shareOpenPdf,
                                     onDownloadCopy = ::downloadCopy,
                                     onSignPdf = onSignPdf,
@@ -942,9 +939,7 @@ fun PdfReaderScreen(
 private fun ReaderToolsMenu(
     expanded: Boolean,
     enabled: Boolean,
-    readingMode: Boolean,
     onDismiss: () -> Unit,
-    onToggleReadingMode: () -> Unit,
     onShare: () -> Unit,
     onDownloadCopy: () -> Unit,
     onSignPdf: () -> Unit,
@@ -957,21 +952,6 @@ private fun ReaderToolsMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
     ) {
-        ReaderToolsMenuItem(
-            icon = Icons.AutoMirrored.Outlined.ChromeReaderMode,
-            label = stringResource(
-                if (readingMode) {
-                    R.string.reader_reading_mode_exit
-                } else {
-                    R.string.reader_reading_mode
-                },
-            ),
-            enabled = enabled,
-            onClick = {
-                onDismiss()
-                onToggleReadingMode()
-            },
-        )
         ReaderToolsMenuItem(
             icon = Icons.Outlined.Share,
             label = stringResource(R.string.reader_share),
