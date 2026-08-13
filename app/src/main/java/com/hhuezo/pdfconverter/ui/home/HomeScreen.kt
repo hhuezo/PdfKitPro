@@ -41,6 +41,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
+import com.hhuezo.pdfconverter.ui.theme.PdfAccent
+import com.hhuezo.pdfconverter.ui.theme.PdfAccentContainer
 
 data class RecentPdfFile(
     val id: String,
@@ -196,7 +198,7 @@ private fun EmptyRecentFiles() {
         Icon(
             imageVector = Icons.Filled.PictureAsPdf,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+            tint = PdfAccent.copy(alpha = 0.5f),
             modifier = Modifier.size(40.dp),
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -238,13 +240,13 @@ fun RecentFileRow(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)),
+                .background(PdfAccentContainer),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Filled.PictureAsPdf,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = PdfAccent,
             )
         }
         Spacer(modifier = Modifier.width(16.dp))

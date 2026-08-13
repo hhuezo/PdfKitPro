@@ -19,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hhuezo.pdfconverter.R
+import com.hhuezo.pdfconverter.ui.theme.PdfAccent
 
 @Composable
 fun RecentFilesScreen(
@@ -38,7 +39,7 @@ fun RecentFilesScreen(
             Icon(
                 imageVector = Icons.Filled.PictureAsPdf,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                tint = PdfAccent.copy(alpha = 0.45f),
             )
             Text(
                 text = stringResource(R.string.no_recent_files),

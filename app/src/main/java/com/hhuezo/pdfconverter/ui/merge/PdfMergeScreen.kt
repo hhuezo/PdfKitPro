@@ -78,7 +78,8 @@ import com.hhuezo.pdfconverter.data.RecentPdfsRepository
 import com.hhuezo.pdfconverter.pdf.PdfMerger
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
-import com.hhuezo.pdfconverter.ui.theme.PrimaryFixedDim
+import com.hhuezo.pdfconverter.ui.theme.PdfAccent
+import com.hhuezo.pdfconverter.ui.theme.PdfAccentContainer
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.formatFileSize
 import com.hhuezo.pdfconverter.util.queryPdfInfo
@@ -582,13 +583,13 @@ private fun MergeFileCard(
                 .width(48.dp)
                 .height(60.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(PrimaryFixedDim),
+                .background(PdfAccentContainer),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Filled.Description,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = PdfAccent,
             )
             Box(
                 modifier = Modifier

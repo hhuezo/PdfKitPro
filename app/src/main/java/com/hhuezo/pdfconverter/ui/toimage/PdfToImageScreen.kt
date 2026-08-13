@@ -85,7 +85,8 @@ import com.hhuezo.pdfconverter.pdf.countPagesInRange
 import com.hhuezo.pdfconverter.pdf.parsePageRange
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
-import com.hhuezo.pdfconverter.ui.theme.PrimaryFixedDim
+import com.hhuezo.pdfconverter.ui.theme.PdfAccent
+import com.hhuezo.pdfconverter.ui.theme.PdfAccentContainer
 import com.hhuezo.pdfconverter.ui.theme.SecondaryContainer
 import com.hhuezo.pdfconverter.ui.theme.SecondaryFixed
 import com.hhuezo.pdfconverter.util.ImageGallerySaver
@@ -561,20 +562,20 @@ private fun FilePreviewCard(name: String, meta: String) {
                 .width(64.dp)
                 .height(80.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(PrimaryFixedDim),
+                .background(PdfAccentContainer),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Filled.Description,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = PdfAccent,
                 modifier = Modifier.size(32.dp),
             )
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .background(
-                        color = MaterialTheme.colorScheme.primary,
+                        color = PdfAccent,
                         shape = RoundedCornerShape(topStart = 4.dp),
                     )
                     .padding(horizontal = 4.dp, vertical = 2.dp),

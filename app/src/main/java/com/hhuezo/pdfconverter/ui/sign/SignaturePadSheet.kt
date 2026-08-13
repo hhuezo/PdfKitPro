@@ -124,7 +124,7 @@ fun SignaturePadSheet(
                     .align(Alignment.CenterHorizontally)
                     .fillMaxWidth(0.15f)
                     .height(4.dp)
-                    .background(Color(0xFFE4BEB9), RoundedCornerShape(999.dp)),
+                    .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(999.dp)),
             )
 
             Row(
@@ -136,7 +136,7 @@ fun SignaturePadSheet(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF191C1E),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 TextButton(
                     onClick = {
@@ -155,7 +155,7 @@ fun SignaturePadSheet(
             Text(
                 text = stringResource(R.string.sign_color),
                 style = MaterialTheme.typography.labelMedium,
-                color = Color(0xFF5B403D),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
                 modifier = Modifier
@@ -173,7 +173,7 @@ fun SignaturePadSheet(
                             .background(color)
                             .border(
                                 width = if (selected) 3.dp else 1.dp,
-                                color = if (selected) Primary else Color(0xFFE4BEB9),
+                                color = if (selected) Primary else MaterialTheme.colorScheme.outlineVariant,
                                 shape = CircleShape,
                             )
                             .clickable {
@@ -193,7 +193,7 @@ fun SignaturePadSheet(
                     selectedWidthDp.roundToInt(),
                 ),
                 style = MaterialTheme.typography.labelMedium,
-                color = Color(0xFF5B403D),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Slider(
                 value = selectedWidthDp,
@@ -219,7 +219,7 @@ fun SignaturePadSheet(
                     .aspectRatio(2f)
                     .border(
                         width = 2.dp,
-                        color = Color(0xFFE4BEB9),
+                        color = MaterialTheme.colorScheme.outlineVariant,
                         shape = RoundedCornerShape(12.dp),
                     )
                     .background(Color(0xFFF2F4F6), RoundedCornerShape(12.dp))

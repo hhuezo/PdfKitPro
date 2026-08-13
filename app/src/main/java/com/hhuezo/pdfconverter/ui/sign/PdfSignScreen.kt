@@ -515,7 +515,7 @@ fun PdfSignScreen(
                                     Text(
                                         text = stringResource(R.string.sign_ready_title),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = Color(0xFF5B403D),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }
@@ -982,7 +982,7 @@ private fun PaletteDivider() {
             .padding(horizontal = 2.dp)
             .width(1.dp)
             .height(24.dp)
-            .background(Color(0x4DE4BEB9)),
+            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
     )
 }
 
@@ -1006,13 +1006,13 @@ private fun ToolButton(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (selected) Color.White else Color(0xFF5B403D),
+            tint = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp),
         )
         Text(
             text = label,
             fontSize = 9.sp,
-            color = if (selected) Color.White else Color(0xFF5B403D),
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
         )
