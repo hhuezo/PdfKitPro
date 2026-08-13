@@ -2,7 +2,7 @@
 
 Aplicación Android para leer, convertir, firmar, unir, escanear y editar archivos PDF. Todo el procesamiento ocurre **en tu dispositivo**: sin publicidad, sin cuentas y sin enviar documentos a servidores.
 
-**Versión actual:** 1.1.3
+**Versión actual:** 1.1.4
 
 ## Características
 
