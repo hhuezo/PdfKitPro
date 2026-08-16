@@ -21,8 +21,8 @@ android {
         applicationId = "com.hhuezo.pdfconverter"
         minSdk = 24
         targetSdk = 36
-        versionCode = 15
-        versionName = "1.1.4"
+        versionCode = 18
+        versionName = "1.1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.tom.roush.pdfbox.android)
     implementation(libs.androidx.exifinterface)
     implementation(libs.play.services.mlkit.document.scanner)
+    implementation(libs.mlkit.text.recognition)
     implementation(libs.reorderable)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -125,16 +125,16 @@
     <string name="merge_error">No se pudieron unir los PDFs</string>
 
     <string name="scan_to_pdf">Escanear a PDF</string>
-    <string name="scan_to_pdf_subtitle">Foto de documentos</string>
+    <string name="scan_to_pdf_subtitle">Documento con texto (OCR)</string>
     <string name="scan_title">Escanear a PDF</string>
     <string name="scan_pages_meta">%1$d páginas</string>
     <string name="scan_empty">Aún no hay páginas</string>
-    <string name="scan_empty_hint">Escanea una página (detecta bordes y permite recortar), vuelve a tocar Escanear para agregar más, o elige de la galería</string>
+    <string name="scan_empty_hint">Escanea una página (detecta bordes y permite recortar), vuelve a tocar Escanear para agregar más, o elige de la galería. El PDF incluirá el texto reconocido en el dispositivo para buscarlo y copiarlo.</string>
     <string name="scan_camera">Escanear</string>
     <string name="scan_gallery">Galería</string>
     <string name="scan_create">Crear PDF</string>
-    <string name="scan_processing">Creando PDF…</string>
-    <string name="scan_ready">PDF listo · %1$d páginas</string>
+    <string name="scan_processing">Reconociendo texto y creando PDF…</string>
+    <string name="scan_ready">PDF con texto · %1$d páginas</string>
     <string name="scan_share">Compartir</string>
     <string name="scan_download">Descargar</string>
     <string name="scan_share_title">Compartir PDF escaneado</string>

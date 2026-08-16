@@ -301,7 +301,8 @@ fun PdfScanScreen(
         }
         uiState = ScanUiState.Processing
         outputPath = null
-        val uris = pagePaths.map { Uri.fromFile(File(it)) }
+        val paths = pagePaths.toList()
+        val uris = paths.map { Uri.fromFile(File(it)) }
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
@@ -310,6 +311,15 @@ fun PdfScanScreen(
                         "escaneado_${System.currentTimeMillis()}.pdf",
                     )
                     ImagesToPdf(context).create(uris, out)
+                    runCatching {
+                        ScanOcrTextLayer(context).embed(paths, out)
+                    }.onFailure { error ->
+                        android.util.Log.w(
+                            "PdfKitProScan",
+                            "OCR no se pudo incrustar: ${error.message}",
+                            error,
+                        )
+                    }
                     out
                 }
             }
