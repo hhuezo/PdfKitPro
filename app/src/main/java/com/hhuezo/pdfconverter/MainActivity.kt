@@ -1,10 +1,8 @@
 package com.hhuezo.pdfconverter
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +14,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -36,6 +35,7 @@ import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -68,7 +68,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hhuezo.pdfconverter.data.RecentPdf
 import com.hhuezo.pdfconverter.data.RecentPdfsRepository
@@ -77,11 +76,13 @@ import com.hhuezo.pdfconverter.ui.deletepages.PdfDeletePagesScreen
 import com.hhuezo.pdfconverter.ui.reorder.PdfReorderPagesScreen
 import com.hhuezo.pdfconverter.ui.rotate.PdfRotatePagesScreen
 import com.hhuezo.pdfconverter.ui.home.HomeScreen
+import com.hhuezo.pdfconverter.ui.permissions.PermissionOnboardingScreen
 import com.hhuezo.pdfconverter.ui.home.RecentFilesScreen
 import com.hhuezo.pdfconverter.ui.home.RecentPdfFile
 import com.hhuezo.pdfconverter.ui.merge.PdfMergeScreen
 import com.hhuezo.pdfconverter.ui.reader.PdfReaderScreen
 import com.hhuezo.pdfconverter.ui.scan.PdfScanScreen
+import com.hhuezo.pdfconverter.ui.settings.SettingsScreen
 import com.hhuezo.pdfconverter.ui.sign.PdfSignScreen
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
@@ -96,13 +97,14 @@ import com.hhuezo.pdfconverter.util.formatFileSize
 import com.hhuezo.pdfconverter.util.formatRecentDate
 import com.hhuezo.pdfconverter.util.isPdfUriAccessible
 import com.hhuezo.pdfconverter.util.queryPdfInfo
+import com.hhuezo.pdfconverter.util.hasAllStartupPermissions
 import com.hhuezo.pdfconverter.util.takePersistableReadPermission
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val externalPdfUri = MutableStateFlow<Uri?>(null)
     private var pendingIntentFlags: Int = 0
@@ -210,20 +212,17 @@ fun AndrosApp(
     var mergeActive by rememberSaveable { mutableStateOf(false) }
     var scanActive by rememberSaveable { mutableStateOf(false) }
     var aboutActive by rememberSaveable { mutableStateOf(false) }
-    var startupPermissionsAsked by rememberSaveable { mutableStateOf(false) }
+    var settingsActive by rememberSaveable { mutableStateOf(false) }
     var missingRecentPdf by remember { mutableStateOf<RecentPdf?>(null) }
+    var showPermissionOnboarding by remember {
+        mutableStateOf(!hasAllStartupPermissions(context))
+    }
 
-    val startupPermissionsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-    ) { /* El usuario puede denegar; cada herramienta vuelve a pedir si hace falta. */ }
-
-    LaunchedEffect(Unit) {
-        if (startupPermissionsAsked) return@LaunchedEffect
-        startupPermissionsAsked = true
-        val missing = missingStartupPermissions(context)
-        if (missing.isNotEmpty()) {
-            startupPermissionsLauncher.launch(missing)
-        }
+    if (showPermissionOnboarding) {
+        PermissionOnboardingScreen(
+            onAllGranted = { showPermissionOnboarding = false },
+        )
+        return
     }
 
     val showingReader = readerUri != null &&
@@ -234,7 +233,8 @@ fun AndrosApp(
         rotatePagesUri == null &&
         !mergeActive &&
         !scanActive &&
-        !aboutActive
+        !aboutActive &&
+        !settingsActive
 
     val activity = context as? ComponentActivity
     DisposableEffect(showingReader) {
@@ -268,6 +268,7 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
+            settingsActive = false
             readerName = info.displayName
             readerInitialPage = page
             readerUri = uriString
@@ -290,6 +291,7 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
+            settingsActive = false
             readerUri = null
             convertToImageUri = uri.toString()
         }
@@ -311,6 +313,7 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
+            settingsActive = false
             readerUri = null
             signPdfUri = uri.toString()
         }
@@ -330,6 +333,7 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
+            settingsActive = false
             readerUri = null
             reorderPagesUri = null
             rotatePagesUri = null
@@ -351,6 +355,7 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
+            settingsActive = false
             readerUri = null
             deletePagesUri = null
             rotatePagesUri = null
@@ -372,6 +377,7 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
+            settingsActive = false
             readerUri = null
             deletePagesUri = null
             reorderPagesUri = null
@@ -388,6 +394,7 @@ fun AndrosApp(
         readerUri = null
         scanActive = false
         aboutActive = false
+        settingsActive = false
         mergeActive = true
     }
 
@@ -400,6 +407,7 @@ fun AndrosApp(
         readerUri = null
         mergeActive = false
         aboutActive = false
+        settingsActive = false
         scanActive = true
     }
 
@@ -412,7 +420,21 @@ fun AndrosApp(
         readerUri = null
         mergeActive = false
         scanActive = false
+        settingsActive = false
         aboutActive = true
+    }
+
+    fun openSettings() {
+        signPdfUri = null
+        convertToImageUri = null
+        deletePagesUri = null
+        reorderPagesUri = null
+        rotatePagesUri = null
+        readerUri = null
+        mergeActive = false
+        scanActive = false
+        aboutActive = false
+        settingsActive = true
     }
 
     LaunchedEffect(externalPdfUri) {
@@ -548,6 +570,7 @@ fun AndrosApp(
 
     fun navigateBack() {
         when {
+            settingsActive -> settingsActive = false
             aboutActive -> aboutActive = false
             signPdfUri != null -> signPdfUri = null
             mergeActive -> mergeActive = false
@@ -593,6 +616,11 @@ fun AndrosApp(
                 }
             },
         )
+    }
+
+    if (settingsActive) {
+        SettingsScreen(onBack = ::navigateBack)
+        return
     }
 
     if (aboutActive) {
@@ -684,7 +712,10 @@ fun AndrosApp(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            MainTopAppBar(onAboutClick = ::openAbout)
+            MainTopAppBar(
+                onSettingsClick = ::openSettings,
+                onAboutClick = ::openAbout,
+            )
         },
         bottomBar = {
             AndrosBottomBar(
@@ -754,7 +785,10 @@ private fun android.content.Context.findActivity(): Activity? {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MainTopAppBar(onAboutClick: () -> Unit) {
+private fun MainTopAppBar(
+    onSettingsClick: () -> Unit,
+    onAboutClick: () -> Unit,
+) {
     TopAppBar(
         title = {
             Text(
@@ -765,6 +799,13 @@ private fun MainTopAppBar(onAboutClick: () -> Unit) {
             )
         },
         actions = {
+            IconButton(onClick = onSettingsClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = stringResource(R.string.settings_open),
+                    tint = Color.White,
+                )
+            }
             IconButton(onClick = onAboutClick) {
                 Icon(
                     imageVector = Icons.Outlined.Info,
@@ -855,18 +896,6 @@ private fun BottomBarTab(
             modifier = Modifier.padding(top = 4.dp),
         )
     }
-}
-
-private fun missingStartupPermissions(context: android.content.Context): Array<String> {
-    val required = buildList {
-        add(Manifest.permission.CAMERA)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        }
-    }
-    return required.filter { permission ->
-        ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED
-    }.toTypedArray()
 }
 
 @Preview(showBackground = true, showSystemUi = true)

@@ -72,6 +72,6 @@ fun formatFileSize(sizeBytes: Long): String {
 
 fun formatRecentDate(epochMillis: Long): String {
     if (epochMillis <= 0L) return ""
-    val formatter = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.forLanguageTag("es-ES"))
+    val formatter = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
     return formatter.format(Date(epochMillis))
 }

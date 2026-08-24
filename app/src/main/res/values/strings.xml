@@ -155,6 +155,24 @@
     <string name="nav_recent">Recientes</string>
     <string name="nav_tools">Herramientas</string>
     <string name="settings">Configuración</string>
+    <string name="settings_open">Abrir configuración</string>
+    <string name="settings_language_title">Idioma</string>
+    <string name="settings_language_subtitle">Elige el idioma de la aplicación. Español es el predeterminado.</string>
+    <string name="settings_language_default">Predeterminado</string>
+
+    <!-- Permisos iniciales -->
+    <string name="permissions_header_hint">Antes de empezar</string>
+    <string name="permissions_title">Permisos de la app</string>
+    <string name="permissions_subtitle">PdfKit Pro necesita estos permisos para escanear documentos y guardar archivos en tu dispositivo.</string>
+    <string name="permissions_camera_title">Cámara</string>
+    <string name="permissions_camera_body">Escanear documentos y convertirlos a PDF con texto reconocible.</string>
+    <string name="permissions_storage_title">Almacenamiento</string>
+    <string name="permissions_storage_body">Guardar PDFs e imágenes en tu dispositivo.</string>
+    <string name="permissions_allow">Permitir acceso</string>
+    <string name="permissions_retry">Intentar de nuevo</string>
+    <string name="permissions_open_settings">Abrir ajustes</string>
+    <string name="permissions_denied_hint">Debes aceptar los permisos para continuar. Toca el botón e intenta otra vez.</string>
+    <string name="permissions_denied_permanent">Los permisos quedaron bloqueados. Ábrelos en Ajustes para continuar.</string>
 
     <!-- Acerca de -->
     <string name="about_title">Acerca de</string>
