@@ -53,6 +53,7 @@ import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.outlined.FindInPage
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Reorder
@@ -169,6 +170,7 @@ fun PdfReaderScreen(
     onBack: () -> Unit,
     onPageChanged: (pageIndex: Int) -> Unit = {},
     onConvertToImage: () -> Unit = {},
+    onConvertToWord: () -> Unit = {},
     onSignPdf: () -> Unit = {},
     onDeletePages: () -> Unit = {},
     onReorderPages: () -> Unit = {},
@@ -638,6 +640,7 @@ fun PdfReaderScreen(
                                     onDownloadCopy = ::downloadCopy,
                                     onSignPdf = onSignPdf,
                                     onConvertToImage = onConvertToImage,
+                                    onConvertToWord = onConvertToWord,
                                     onDeletePages = onDeletePages,
                                     onReorderPages = onReorderPages,
                                     onRotatePages = onRotatePages,
@@ -944,6 +947,7 @@ private fun ReaderToolsMenu(
     onDownloadCopy: () -> Unit,
     onSignPdf: () -> Unit,
     onConvertToImage: () -> Unit,
+    onConvertToWord: () -> Unit,
     onDeletePages: () -> Unit,
     onReorderPages: () -> Unit,
     onRotatePages: () -> Unit,
@@ -986,6 +990,15 @@ private fun ReaderToolsMenu(
             onClick = {
                 onDismiss()
                 onConvertToImage()
+            },
+        )
+        ReaderToolsMenuItem(
+            icon = Icons.AutoMirrored.Outlined.Article,
+            label = stringResource(R.string.reader_convert_to_word),
+            enabled = enabled,
+            onClick = {
+                onDismiss()
+                onConvertToWord()
             },
         )
         ReaderToolsMenuItem(

@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.outlined.Rotate90DegreesCw
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.DocumentScanner
@@ -44,6 +45,7 @@ import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
 
 enum class QuickToolId {
     ToImage,
+    ToWord,
     Sign,
     DeletePages,
     ReorderPages,
@@ -56,6 +58,10 @@ enum class QuickToolId {
 private val ImageCardBg = Color(0xFFD8F3E5)
 private val ImageIconTint = Color(0xFF1B6B45)
 private val ImageText = Color(0xFF0E3D28)
+
+private val WordCardBg = Color(0xFFD6ECFF)
+private val WordIconTint = Color(0xFF0B5CAB)
+private val WordText = Color(0xFF063A6B)
 
 private val SignCardBg = Color(0xFFFFE4CC)
 private val SignIconTint = Color(0xFF9A4A12)
@@ -158,6 +164,16 @@ fun ToolsScreen(
             titleColor = ImageText,
             subtitleColor = ImageText.copy(alpha = 0.72f),
         ) to QuickToolId.ToImage,
+        QuickTool(
+            titleRes = R.string.pdf_to_word,
+            subtitleRes = R.string.pdf_to_word_subtitle,
+            icon = Icons.AutoMirrored.Outlined.Article,
+            cardBackground = WordCardBg,
+            iconBackground = Color.White.copy(alpha = 0.9f),
+            iconTint = WordIconTint,
+            titleColor = WordText,
+            subtitleColor = WordText.copy(alpha = 0.72f),
+        ) to QuickToolId.ToWord,
         QuickTool(
             titleRes = R.string.delete_pages,
             subtitleRes = R.string.delete_pages_subtitle,

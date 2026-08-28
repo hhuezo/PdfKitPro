@@ -19,8 +19,13 @@ object PdfFileSaver {
     /**
      * Saves a PDF into Downloads/PdfKit Pro and returns the content [Uri], or null on failure.
      */
-    fun saveToDownloads(context: Context, source: File, displayName: String): Uri? {
-        return writeToDownloads(context, displayName) { output ->
+    fun saveToDownloads(
+        context: Context,
+        source: File,
+        displayName: String,
+        mimeType: String = "application/pdf",
+    ): Uri? {
+        return writeToDownloads(context, displayName, mimeType) { output ->
             source.inputStream().use { input -> input.copyTo(output) }
         }
     }
@@ -31,7 +36,7 @@ object PdfFileSaver {
     fun saveUriToDownloads(context: Context, sourceUri: Uri, displayName: String): Uri? {
         val input = context.contentResolver.openInputStream(sourceUri) ?: return null
         return input.use { stream ->
-            writeToDownloads(context, displayName) { output ->
+            writeToDownloads(context, displayName, "application/pdf") { output ->
                 stream.copyTo(output)
             }
         }
@@ -40,12 +45,13 @@ object PdfFileSaver {
     private fun writeToDownloads(
         context: Context,
         displayName: String,
+        mimeType: String,
         write: (java.io.OutputStream) -> Unit,
     ): Uri? {
         val resolver = context.contentResolver
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(
                     MediaStore.MediaColumns.RELATIVE_PATH,

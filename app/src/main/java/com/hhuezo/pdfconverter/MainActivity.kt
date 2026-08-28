@@ -90,6 +90,7 @@ import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
 import com.hhuezo.pdfconverter.ui.theme.Primary
 import com.hhuezo.pdfconverter.ui.theme.PrimaryFixed
 import com.hhuezo.pdfconverter.ui.toimage.PdfToImageScreen
+import com.hhuezo.pdfconverter.ui.toword.PdfToWordScreen
 import com.hhuezo.pdfconverter.ui.tools.QuickToolId
 import com.hhuezo.pdfconverter.ui.tools.ToolsScreen
 import com.hhuezo.pdfconverter.util.OpenWritablePdfDocument
@@ -205,6 +206,7 @@ fun AndrosApp(
     var readerName by rememberSaveable { mutableStateOf("") }
     var readerInitialPage by rememberSaveable { mutableIntStateOf(0) }
     var convertToImageUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var convertToWordUri by rememberSaveable { mutableStateOf<String?>(null) }
     var signPdfUri by rememberSaveable { mutableStateOf<String?>(null) }
     var deletePagesUri by rememberSaveable { mutableStateOf<String?>(null) }
     var reorderPagesUri by rememberSaveable { mutableStateOf<String?>(null) }
@@ -228,6 +230,7 @@ fun AndrosApp(
     val showingReader = readerUri != null &&
         signPdfUri == null &&
         convertToImageUri == null &&
+        convertToWordUri == null &&
         deletePagesUri == null &&
         reorderPagesUri == null &&
         rotatePagesUri == null &&
@@ -262,6 +265,7 @@ fun AndrosApp(
             // Leave tool flows so "Abrir con" / recientes siempre van al lector.
             signPdfUri = null
             convertToImageUri = null
+            convertToWordUri = null
             deletePagesUri = null
             reorderPagesUri = null
             rotatePagesUri = null
@@ -293,7 +297,31 @@ fun AndrosApp(
             aboutActive = false
             settingsActive = false
             readerUri = null
+            convertToWordUri = null
             convertToImageUri = uri.toString()
+        }
+    }
+
+    fun openForWordConversion(uri: Uri, intentFlags: Int = 0) {
+        context.takePersistableReadPermission(uri, intentFlags)
+        val info = context.queryPdfInfo(uri)
+        scope.launch {
+            repository.addOrUpdate(
+                uri = uri.toString(),
+                displayName = info.displayName,
+                sizeBytes = info.sizeBytes,
+            )
+            signPdfUri = null
+            deletePagesUri = null
+            reorderPagesUri = null
+            rotatePagesUri = null
+            mergeActive = false
+            scanActive = false
+            aboutActive = false
+            settingsActive = false
+            readerUri = null
+            convertToImageUri = null
+            convertToWordUri = uri.toString()
         }
     }
 
@@ -307,6 +335,7 @@ fun AndrosApp(
                 sizeBytes = info.sizeBytes,
             )
             convertToImageUri = null
+            convertToWordUri = null
             deletePagesUri = null
             reorderPagesUri = null
             rotatePagesUri = null
@@ -330,6 +359,7 @@ fun AndrosApp(
             )
             signPdfUri = null
             convertToImageUri = null
+            convertToWordUri = null
             mergeActive = false
             scanActive = false
             aboutActive = false
@@ -352,6 +382,7 @@ fun AndrosApp(
             )
             signPdfUri = null
             convertToImageUri = null
+            convertToWordUri = null
             mergeActive = false
             scanActive = false
             aboutActive = false
@@ -374,6 +405,7 @@ fun AndrosApp(
             )
             signPdfUri = null
             convertToImageUri = null
+            convertToWordUri = null
             mergeActive = false
             scanActive = false
             aboutActive = false
@@ -388,6 +420,7 @@ fun AndrosApp(
     fun openMerge() {
         signPdfUri = null
         convertToImageUri = null
+        convertToWordUri = null
         deletePagesUri = null
         reorderPagesUri = null
         rotatePagesUri = null
@@ -401,6 +434,7 @@ fun AndrosApp(
     fun openScan() {
         signPdfUri = null
         convertToImageUri = null
+        convertToWordUri = null
         deletePagesUri = null
         reorderPagesUri = null
         rotatePagesUri = null
@@ -414,6 +448,7 @@ fun AndrosApp(
     fun openAbout() {
         signPdfUri = null
         convertToImageUri = null
+        convertToWordUri = null
         deletePagesUri = null
         reorderPagesUri = null
         rotatePagesUri = null
@@ -427,6 +462,7 @@ fun AndrosApp(
     fun openSettings() {
         signPdfUri = null
         convertToImageUri = null
+        convertToWordUri = null
         deletePagesUri = null
         reorderPagesUri = null
         rotatePagesUri = null
@@ -492,6 +528,18 @@ fun AndrosApp(
         }
     }
 
+    val pickPdfForWord = rememberLauncherForActivityResult(
+        contract = OpenWritablePdfDocument(),
+    ) { uri ->
+        uri?.let {
+            openForWordConversion(
+                it,
+                intentFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
+    }
+
     val pickPdfForSign = rememberLauncherForActivityResult(
         contract = OpenWritablePdfDocument(),
     ) { uri ->
@@ -548,6 +596,10 @@ fun AndrosApp(
         pickPdfForImage.launch(arrayOf("application/pdf"))
     }
 
+    fun launchPickerForWord() {
+        pickPdfForWord.launch(arrayOf("application/pdf"))
+    }
+
     fun launchPickerForSign() {
         pickPdfForSign.launch(arrayOf("application/pdf"))
     }
@@ -578,6 +630,7 @@ fun AndrosApp(
             rotatePagesUri != null -> rotatePagesUri = null
             reorderPagesUri != null -> reorderPagesUri = null
             deletePagesUri != null -> deletePagesUri = null
+            convertToWordUri != null -> convertToWordUri = null
             convertToImageUri != null -> convertToImageUri = null
             readerUri != null -> readerUri = null
             currentDestination != AppDestination.Home -> {
@@ -678,6 +731,15 @@ fun AndrosApp(
         return
     }
 
+    val activeConvertWordUri = convertToWordUri
+    if (activeConvertWordUri != null) {
+        PdfToWordScreen(
+            uri = Uri.parse(activeConvertWordUri),
+            onBack = ::navigateBack,
+        )
+        return
+    }
+
     val activeConvertUri = convertToImageUri
     if (activeConvertUri != null) {
         PdfToImageScreen(
@@ -700,6 +762,7 @@ fun AndrosApp(
                 }
             },
             onConvertToImage = { convertToImageUri = activeUri },
+            onConvertToWord = { convertToWordUri = activeUri },
             onSignPdf = { signPdfUri = activeUri },
             onDeletePages = { deletePagesUri = activeUri },
             onReorderPages = { reorderPagesUri = activeUri },
@@ -750,6 +813,7 @@ fun AndrosApp(
                 onToolClick = { toolId ->
                     when (toolId) {
                         QuickToolId.ToImage -> launchPickerForImage()
+                        QuickToolId.ToWord -> launchPickerForWord()
                         QuickToolId.Sign -> launchPickerForSign()
                         QuickToolId.DeletePages -> launchPickerForDeletePages()
                         QuickToolId.ReorderPages -> launchPickerForReorderPages()
