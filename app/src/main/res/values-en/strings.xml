@@ -340,11 +340,11 @@
 
     <!-- PDF to Word -->
     <string name="pdf_to_word">PDF to Word</string>
-    <string name="pdf_to_word_subtitle">Editable text (.docx)</string>
+    <string name="pdf_to_word_subtitle">Text, style, and images (.docx)</string>
     <string name="to_word_title">Convert to Word</string>
     <string name="to_word_file_meta">%1$s • %2$d pages</string>
-    <string name="to_word_info">Text is extracted so you can edit it in Word. The original layout (columns, tables, or images) may not be kept. Scanned pages are read with on-device OCR.</string>
-    <string name="to_word_info_ocr">Done. Some pages had no text and were recognized with on-device OCR.</string>
+    <string name="to_word_info">Text is rebuilt with font sizes, bold, and images, in each page’s reading order (left column first, then right). Pages with no text are inserted as an image. Very complex columns or tables may not match exactly.</string>
+    <string name="to_word_info_ocr">Done. Some pages were inserted as an image to keep the look of the PDF.</string>
     <string name="to_word_convert">Convert to Word</string>
     <string name="to_word_processing">Converting…</string>
     <string name="to_word_actions_title">What do you want to do?</string>
@@ -356,6 +356,6 @@
     <string name="to_word_error_open">Could not open the PDF</string>
     <string name="to_word_error_range">The page range is not valid</string>
     <string name="to_word_error_convert">Could not convert to Word</string>
-    <string name="to_word_error_empty">This PDF has no recognizable text</string>
+    <string name="to_word_error_empty">This PDF has no recognizable text or images</string>
     <string name="reader_convert_to_word">Convert to Word</string>
 </resources>

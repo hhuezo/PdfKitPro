@@ -340,11 +340,11 @@
 
     <!-- PDF a Word -->
     <string name="pdf_to_word">PDF a Word</string>
-    <string name="pdf_to_word_subtitle">Texto editable (.docx)</string>
+    <string name="pdf_to_word_subtitle">Texto, estilo e imágenes (.docx)</string>
     <string name="to_word_title">Convertir a Word</string>
     <string name="to_word_file_meta">%1$s • %2$d páginas</string>
-    <string name="to_word_info">Se extrae el texto para editarlo en Word. El diseño original (columnas, tablas o imágenes) puede no conservarse. Las páginas escaneadas se leen con OCR en el dispositivo.</string>
-    <string name="to_word_info_ocr">Listo. Algunas páginas no tenían texto y se reconocieron con OCR en el dispositivo.</string>
+    <string name="to_word_info">Se reconstruye el texto con tamaños de letra, negritas e imágenes, en el orden de lectura de cada página (primero la columna izquierda, luego la derecha). Las páginas sin texto se insertan como imagen. Columnas y tablas muy complejas pueden no coincidir al 100%.</string>
+    <string name="to_word_info_ocr">Listo. Algunas páginas se insertaron como imagen para conservar el aspecto del PDF.</string>
     <string name="to_word_convert">Convertir a Word</string>
     <string name="to_word_processing">Convirtiendo…</string>
     <string name="to_word_actions_title">¿Qué deseas hacer?</string>
@@ -356,6 +356,6 @@
     <string name="to_word_error_open">No se pudo abrir el PDF</string>
     <string name="to_word_error_range">El rango de páginas no es válido</string>
     <string name="to_word_error_convert">No se pudo convertir a Word</string>
-    <string name="to_word_error_empty">Este PDF no tiene texto reconocible</string>
+    <string name="to_word_error_empty">Este PDF no tiene texto ni imágenes reconocibles</string>
     <string name="reader_convert_to_word">Convertir a Word</string>
 </resources>
