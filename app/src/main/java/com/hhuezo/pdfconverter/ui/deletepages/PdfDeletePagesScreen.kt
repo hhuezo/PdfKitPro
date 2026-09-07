@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +66,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -77,6 +75,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.R
@@ -86,6 +85,7 @@ import com.hhuezo.pdfconverter.pdf.PdfPageRemover
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.PdfSaveOutcome
 import com.hhuezo.pdfconverter.util.queryPdfInfo
+import com.hhuezo.pdfconverter.util.isSafeToDraw
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -620,9 +620,9 @@ private fun SelectablePdfPage(
             contentAlignment = Alignment.Center,
         ) {
             val current = bitmap
-            if (current != null && !current.isRecycled) {
-                Image(
-                    bitmap = current.asImageBitmap(),
+            if (current != null && current.isSafeToDraw()) {
+                SafeBitmapImage(
+                    bitmap = current,
                     contentDescription = stringResource(
                         R.string.delete_pages_page_label,
                         pageIndex + 1,

@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import com.hhuezo.pdfconverter.util.clampBitmapSize
+import com.hhuezo.pdfconverter.util.isSafeToDraw
 import java.io.Closeable
 import java.util.concurrent.ConcurrentHashMap
 
@@ -39,16 +41,18 @@ class PdfDocumentSession(
         require(targetWidthPx > 0)
 
         bitmapCache[pageIndex]?.let { cached ->
-            if (cached.width >= targetWidthPx && !cached.isRecycled) {
+            if (cached.width >= targetWidthPx && cached.isSafeToDraw()) {
                 return cached
             }
         }
 
         val rendered = synchronized(lock) {
             renderer.openPage(pageIndex).use { page ->
-                val width = targetWidthPx
-                val height = (page.height.toFloat() / page.width.toFloat() * width).toInt()
-                    .coerceAtLeast(1)
+                val (width, height) = clampBitmapSize(
+                    requestedWidth = targetWidthPx,
+                    pageWidth = page.width,
+                    pageHeight = page.height,
+                )
                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 bitmap.eraseColor(android.graphics.Color.WHITE)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
@@ -61,9 +65,8 @@ class PdfDocumentSession(
     }
 
     fun clearCache() {
-        bitmapCache.values.forEach { bitmap ->
-            if (!bitmap.isRecycled) bitmap.recycle()
-        }
+        // Drop references only. Recycling while Compose still draws the page crashes
+        // with RecordingCanvas.throwIfCannotDraw.
         bitmapCache.clear()
     }
 

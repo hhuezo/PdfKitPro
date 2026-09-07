@@ -3,7 +3,6 @@ package com.hhuezo.pdfconverter.ui.sign
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -81,7 +80,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -104,6 +102,7 @@ import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
 import com.hhuezo.pdfconverter.pdf.PdfSigner
 import com.hhuezo.pdfconverter.pdf.PdfStampOverlay
+import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.ui.theme.Primary
@@ -111,6 +110,7 @@ import com.hhuezo.pdfconverter.ui.theme.PrimaryContainer
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.PdfSaveOutcome
 import com.hhuezo.pdfconverter.util.queryPdfInfo
+import com.hhuezo.pdfconverter.util.isSafeToDraw
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -207,7 +207,6 @@ fun PdfSignScreen(
         onDispose {
             session?.close()
             session = null
-            overlays.forEach { if (!it.bitmap.isRecycled) it.bitmap.recycle() }
         }
     }
 
@@ -1066,9 +1065,9 @@ private fun SignPageItem(
             val pageHeightPx = constraints.maxHeight.toFloat().coerceAtLeast(1f)
             val rendered = pageBitmap
 
-            if (rendered != null && !rendered.isRecycled) {
-                Image(
-                    bitmap = rendered.asImageBitmap(),
+            if (rendered != null && rendered.isSafeToDraw()) {
+                SafeBitmapImage(
+                    bitmap = rendered,
                     contentDescription = null,
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier.fillMaxSize(),
@@ -1120,12 +1119,14 @@ private fun SignPageItem(
                             )
                         },
                 ) {
-                    Image(
-                        bitmap = overlay.bitmap.asImageBitmap(),
-                        contentDescription = null,
-                        contentScale = ContentScale.FillBounds,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    if (overlay.bitmap.isSafeToDraw()) {
+                        SafeBitmapImage(
+                            bitmap = overlay.bitmap,
+                            contentDescription = null,
+                            contentScale = ContentScale.FillBounds,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                     if (selected) {
                         IconButton(
                             onClick = { onDeleteOverlay(overlay.id) },

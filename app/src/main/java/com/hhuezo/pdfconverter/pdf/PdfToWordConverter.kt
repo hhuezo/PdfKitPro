@@ -7,6 +7,7 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import com.hhuezo.pdfconverter.util.clampBitmapSize
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.contentstream.PDFStreamEngine
 import com.tom_roush.pdfbox.contentstream.operator.Operator
@@ -437,10 +438,11 @@ class PdfToWordConverter(context: Context) {
             val pfd = ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY)
             PdfRenderer(pfd).use { renderer ->
                 renderer.openPage(pageIndex).use { page ->
-                    val width = PAGE_RENDER_WIDTH_PX
-                    val height = (page.height.toFloat() / page.width.toFloat() * width)
-                        .toInt()
-                        .coerceAtLeast(1)
+                    val (width, height) = clampBitmapSize(
+                        requestedWidth = PAGE_RENDER_WIDTH_PX,
+                        pageWidth = page.width,
+                        pageHeight = page.height,
+                    )
                     val pageBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                     pageBitmap.eraseColor(Color.WHITE)
                     page.render(pageBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)

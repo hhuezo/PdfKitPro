@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import com.hhuezo.pdfconverter.util.clampBitmapSize
 import java.io.File
 import java.io.FileOutputStream
 
@@ -62,10 +63,11 @@ class PdfToImageConverter(private val context: Context) {
 
     private fun renderPage(renderer: PdfRenderer, pageIndex: Int, maxWidthPx: Int): Bitmap {
         return renderer.openPage(pageIndex).use { page ->
-            val width = maxWidthPx.coerceAtLeast(1)
-            val height = (page.height.toFloat() / page.width.toFloat() * width)
-                .toInt()
-                .coerceAtLeast(1)
+            val (width, height) = clampBitmapSize(
+                requestedWidth = maxWidthPx,
+                pageWidth = page.width,
+                pageHeight = page.height,
+            )
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             bitmap.eraseColor(Color.WHITE)
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)

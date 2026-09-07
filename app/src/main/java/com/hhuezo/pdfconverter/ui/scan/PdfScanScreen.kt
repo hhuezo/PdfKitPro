@@ -9,7 +9,6 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -68,7 +67,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -79,12 +77,14 @@ import androidx.core.content.FileProvider
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.ImagesToPdf
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.loadOrientedBitmap
+import com.hhuezo.pdfconverter.util.isSafeToDraw
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -610,9 +610,9 @@ private fun ScanPageCard(
             contentAlignment = Alignment.Center,
         ) {
             val current = bitmap
-            if (current != null && !current.isRecycled) {
-                Image(
-                    bitmap = current.asImageBitmap(),
+            if (current != null && current.isSafeToDraw()) {
+                SafeBitmapImage(
+                    bitmap = current,
                     contentDescription = stringResource(R.string.scan_page_label, pageNumber),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize(),

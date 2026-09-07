@@ -13,7 +13,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
@@ -100,7 +99,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -130,6 +128,7 @@ import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.R
@@ -139,6 +138,7 @@ import com.hhuezo.pdfconverter.pdf.PdfPageTextLayer
 import com.hhuezo.pdfconverter.pdf.PdfSearchMatch
 import com.hhuezo.pdfconverter.pdf.PdfTextSearcher
 import com.hhuezo.pdfconverter.util.PdfFileSaver
+import com.hhuezo.pdfconverter.util.isSafeToDraw
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -151,6 +151,7 @@ import kotlin.math.roundToInt
 
 private const val MinZoom = 1f
 private const val MaxZoom = 5f
+private const val MaxRenderZoom = 2f
 
 private data class PageTextSelection(
     val pageIndex: Int,
@@ -748,9 +749,10 @@ fun PdfReaderScreen(
 
                     LaunchedEffect(scale, baseWidthPx) {
                         delay(180)
-                        renderWidthPx = (baseWidthPx * scale)
+                        val renderScale = scale.coerceAtMost(MaxRenderZoom)
+                        renderWidthPx = (baseWidthPx * renderScale)
                             .roundToInt()
-                            .coerceIn(baseWidthPx, (baseWidthPx * MaxZoom).roundToInt())
+                            .coerceIn(baseWidthPx, (baseWidthPx * MaxRenderZoom).roundToInt())
                     }
 
                     val isZoomed = scale > 1.01f
@@ -1373,9 +1375,9 @@ private fun PdfPageItem(
                     },
             ) {
                 val current = bitmap
-                if (current != null && !current.isRecycled) {
-                    Image(
-                        bitmap = current.asImageBitmap(),
+                if (current != null && current.isSafeToDraw()) {
+                    SafeBitmapImage(
+                        bitmap = current,
                         contentDescription = null,
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier.fillMaxSize(),
