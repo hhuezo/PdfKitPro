@@ -13,7 +13,14 @@ enum class AppLanguage(
     val nativeName: String,
 ) {
     Spanish("es", "Español"),
+    German("de", "Deutsch"),
     English("en", "English"),
+    French("fr", "Français"),
+    Italian("it", "Italiano"),
+    Dutch("nl", "Nederlands"),
+    Polish("pl", "Polski"),
+    Portuguese("pt", "Português"),
+    Romanian("ro", "Română"),
     ;
 
     fun toLocale(): Locale = Locale.forLanguageTag(tag)

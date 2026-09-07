@@ -192,7 +192,9 @@
     <string name="about_oss_compose">Jetpack Compose</string>
     <string name="about_oss_pdfbox">PdfBox Android</string>
     <string name="about_oss_mlkit">ML Kit Document Scanner</string>
+    <string name="about_oss_mlkit_ocr">ML Kit Text Recognition</string>
     <string name="about_oss_datastore">AndroidX DataStore</string>
+    <string name="about_oss_exifinterface">AndroidX ExifInterface</string>
     <string name="about_oss_kotlin">Kotlin</string>
     <string name="about_oss_reorderable">Reorderable (Compose)</string>
     <string name="about_copyright">© 2026 PdfKit Pro. All rights reserved.</string>

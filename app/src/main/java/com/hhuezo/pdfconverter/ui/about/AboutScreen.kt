@@ -1,9 +1,7 @@
 package com.hhuezo.pdfconverter.ui.about
 
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -52,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.hhuezo.pdfconverter.BuildConfig
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
@@ -74,29 +73,11 @@ fun AboutScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val versionLabel = remember {
-        runCatching {
-            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.packageManager.getPackageInfo(
-                    context.packageName,
-                    PackageManager.PackageInfoFlags.of(0),
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                context.packageManager.getPackageInfo(context.packageName, 0)
-            }
-            val versionName = packageInfo.versionName.orEmpty().ifBlank { "—" }
-            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                packageInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.versionCode.toLong()
-            }
-            context.getString(R.string.about_version, versionName, versionCode)
-        }.getOrElse {
-            context.getString(R.string.about_version_unknown)
-        }
-    }
+    val versionLabel = stringResource(
+        R.string.about_version,
+        BuildConfig.VERSION_NAME,
+        BuildConfig.VERSION_CODE,
+    )
 
     val openSourceCredits = remember {
         listOf(
@@ -113,8 +94,16 @@ fun AboutScreen(
                 licenseUrl = "https://developers.google.com/ml-kit/terms",
             ),
             OpenSourceCredit(
+                nameRes = R.string.about_oss_mlkit_ocr,
+                licenseUrl = "https://developers.google.com/ml-kit/terms",
+            ),
+            OpenSourceCredit(
                 nameRes = R.string.about_oss_datastore,
                 licenseUrl = "https://developer.android.com/jetpack/androidx/releases/datastore#license",
+            ),
+            OpenSourceCredit(
+                nameRes = R.string.about_oss_exifinterface,
+                licenseUrl = "https://developer.android.com/jetpack/androidx/releases/exifinterface",
             ),
             OpenSourceCredit(
                 nameRes = R.string.about_oss_kotlin,
