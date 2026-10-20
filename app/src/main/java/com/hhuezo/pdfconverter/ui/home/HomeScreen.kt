@@ -26,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,7 +53,6 @@ data class RecentPdfFile(
 fun HomeScreen(
     recentFiles: List<RecentPdfFile> = emptyList(),
     onOpenPdf: () -> Unit = {},
-    onViewAllRecent: () -> Unit = {},
     onRecentFileClick: (RecentPdfFile) -> Unit = {},
     onRecentFileRemove: (RecentPdfFile) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -68,7 +66,6 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(24.dp))
         RecentFilesSection(
             files = recentFiles,
-            onViewAll = onViewAllRecent,
             onFileClick = onRecentFileClick,
             onFileRemove = onRecentFileRemove,
             modifier = Modifier.weight(1f),
@@ -137,33 +134,17 @@ private fun OpenPdfHero(onClick: () -> Unit) {
 @Composable
 private fun RecentFilesSection(
     files: List<RecentPdfFile>,
-    onViewAll: () -> Unit,
     onFileClick: (RecentPdfFile) -> Unit,
     onFileRemove: (RecentPdfFile) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.recent_files),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            TextButton(onClick = onViewAll) {
-                Text(
-                    text = stringResource(R.string.view_all),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
+        Text(
+            text = stringResource(R.string.recent_files),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
 
         if (files.isEmpty()) {
             EmptyRecentFiles()

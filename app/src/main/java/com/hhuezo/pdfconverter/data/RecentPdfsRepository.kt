@@ -1,11 +1,13 @@
 package com.hhuezo.pdfconverter.data
 
 import android.content.Context
+import android.net.Uri
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.hhuezo.pdfconverter.util.deleteImportedPdfIfOwned
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -45,7 +47,11 @@ class RecentPdfsRepository(private val context: Context) {
                 current.removeAt(existingIndex)
             }
             current.add(0, entry)
-            prefs[key] = serialize(current.take(MAX_RECENT))
+            val kept = current.take(MAX_RECENT)
+            current.drop(MAX_RECENT).forEach { dropped ->
+                context.deleteImportedPdfIfOwned(Uri.parse(dropped.uri))
+            }
+            prefs[key] = serialize(kept)
         }
     }
 
@@ -62,6 +68,7 @@ class RecentPdfsRepository(private val context: Context) {
     }
 
     suspend fun remove(uri: String) {
+        context.deleteImportedPdfIfOwned(Uri.parse(uri))
         context.recentPdfsStore.edit { prefs ->
             val current = parse(prefs[key].orEmpty()).filterNot { it.uri == uri }
             prefs[key] = serialize(current)

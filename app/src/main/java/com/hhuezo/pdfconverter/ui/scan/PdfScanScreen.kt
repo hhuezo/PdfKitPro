@@ -182,25 +182,31 @@ fun PdfScanScreen(
             }
             return
         }
+        fun showScannerError() {
+            scope.launch {
+                snackbar.showSnackbar(context.getString(R.string.scan_error_scanner))
+            }
+        }
+
         // Una página por sesión: si descartan a mitad, no se pierden las ya confirmadas.
-        val options = GmsDocumentScannerOptions.Builder()
-            .setGalleryImportAllowed(false)
-            .setPageLimit(1)
-            .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
-            .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_BASE)
-            .build()
-        GmsDocumentScanning.getClient(options)
-            .getStartScanIntent(host)
-            .addOnSuccessListener { intentSender ->
-                documentScannerLauncher.launch(
-                    IntentSenderRequest.Builder(intentSender).build(),
-                )
-            }
-            .addOnFailureListener {
-                scope.launch {
-                    snackbar.showSnackbar(context.getString(R.string.scan_error_scanner))
+        runCatching {
+            val options = GmsDocumentScannerOptions.Builder()
+                .setGalleryImportAllowed(false)
+                .setPageLimit(1)
+                .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_BASE)
+                .build()
+            GmsDocumentScanning.getClient(options)
+                .getStartScanIntent(host)
+                .addOnSuccessListener { intentSender ->
+                    runCatching {
+                        documentScannerLauncher.launch(
+                            IntentSenderRequest.Builder(intentSender).build(),
+                        )
+                    }.onFailure { showScannerError() }
                 }
-            }
+                .addOnFailureListener { showScannerError() }
+        }.onFailure { showScannerError() }
     }
 
     val pickImages = rememberLauncherForActivityResult(

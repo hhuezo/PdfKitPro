@@ -51,10 +51,23 @@ import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
     var selectedLanguage by remember { mutableStateOf(AppLanguage.current()) }
+    val onSelectLanguage: (AppLanguage) -> Unit = { language ->
+        selectedLanguage = language
+        AppLanguage.apply(language)
+    }
+
+    if (onBack == null) {
+        SettingsContent(
+            selectedLanguage = selectedLanguage,
+            onSelectLanguage = onSelectLanguage,
+            modifier = modifier.fillMaxSize(),
+        )
+        return
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -80,23 +93,33 @@ fun SettingsScreen(
             )
         },
     ) { innerPadding ->
-        Column(
+        SettingsContent(
+            selectedLanguage = selectedLanguage,
+            onSelectLanguage = onSelectLanguage,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .navigationBarInsetPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            LanguageSection(
-                selected = selectedLanguage,
-                onSelect = { language ->
-                    selectedLanguage = language
-                    AppLanguage.apply(language)
-                },
-            )
-        }
+                .navigationBarInsetPadding(),
+        )
+    }
+}
+
+@Composable
+private fun SettingsContent(
+    selectedLanguage: AppLanguage,
+    onSelectLanguage: (AppLanguage) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        LanguageSection(
+            selected = selectedLanguage,
+            onSelect = onSelectLanguage,
+        )
     }
 }
 
@@ -205,6 +228,6 @@ private fun LanguageOptionRow(
 @Composable
 private fun SettingsScreenPreview() {
     AndrosTheme {
-        SettingsScreen(onBack = {})
+        SettingsScreen()
     }
 }

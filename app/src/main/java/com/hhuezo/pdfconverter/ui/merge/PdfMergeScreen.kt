@@ -83,7 +83,7 @@ import com.hhuezo.pdfconverter.ui.theme.PdfAccentContainer
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.formatFileSize
 import com.hhuezo.pdfconverter.util.queryPdfInfo
-import com.hhuezo.pdfconverter.util.takePersistableReadPermission
+import com.hhuezo.pdfconverter.util.ensureDurablePdfAccess
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -147,17 +147,20 @@ fun PdfMergeScreen(
         return withContext(Dispatchers.IO) {
             uris.mapNotNull { uri ->
                 runCatching {
-                    context.takePersistableReadPermission(uri)
-                    val info = context.queryPdfInfo(uri)
-                    val pages = context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+                    val durable = context.ensureDurablePdfAccess(uri)
+                    val info = context.queryPdfInfo(durable)
+                    val pages = context.contentResolver.openFileDescriptor(durable, "r")?.use { pfd ->
                         PdfRenderer(pfd).use { it.pageCount }
                     } ?: 0
                     MergePdfItem(
-                        uriString = uri.toString(),
+                        uriString = durable.toString(),
                         displayName = info.displayName,
                         sizeBytes = info.sizeBytes,
                         pageCount = pages,
                     ).also {
+                        if (durable.toString() != uri.toString()) {
+                            repository.remove(uri.toString())
+                        }
                         repository.addOrUpdate(
                             uri = it.uriString,
                             displayName = it.displayName,

@@ -29,10 +29,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
@@ -77,7 +76,6 @@ import com.hhuezo.pdfconverter.ui.reorder.PdfReorderPagesScreen
 import com.hhuezo.pdfconverter.ui.rotate.PdfRotatePagesScreen
 import com.hhuezo.pdfconverter.ui.home.HomeScreen
 import com.hhuezo.pdfconverter.ui.permissions.PermissionOnboardingScreen
-import com.hhuezo.pdfconverter.ui.home.RecentFilesScreen
 import com.hhuezo.pdfconverter.ui.home.RecentPdfFile
 import com.hhuezo.pdfconverter.ui.merge.PdfMergeScreen
 import com.hhuezo.pdfconverter.ui.reader.PdfReaderScreen
@@ -96,10 +94,11 @@ import com.hhuezo.pdfconverter.ui.tools.ToolsScreen
 import com.hhuezo.pdfconverter.util.OpenWritablePdfDocument
 import com.hhuezo.pdfconverter.util.formatFileSize
 import com.hhuezo.pdfconverter.util.formatRecentDate
+import com.hhuezo.pdfconverter.util.PdfFileInfo
+import com.hhuezo.pdfconverter.util.ensureDurablePdfAccess
+import com.hhuezo.pdfconverter.util.hasAllStartupPermissions
 import com.hhuezo.pdfconverter.util.isPdfUriAccessible
 import com.hhuezo.pdfconverter.util.queryPdfInfo
-import com.hhuezo.pdfconverter.util.hasAllStartupPermissions
-import com.hhuezo.pdfconverter.util.takePersistableReadPermission
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -176,15 +175,15 @@ enum class AppDestination(
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home,
     ),
-    Recent(
-        labelRes = R.string.nav_recent,
-        selectedIcon = Icons.Filled.History,
-        unselectedIcon = Icons.Outlined.History,
-    ),
     Tools(
         labelRes = R.string.nav_tools,
         selectedIcon = Icons.Filled.Build,
         unselectedIcon = Icons.Outlined.Build,
+    ),
+    Settings(
+        labelRes = R.string.settings,
+        selectedIcon = Icons.Filled.Settings,
+        unselectedIcon = Icons.Outlined.Settings,
     ),
 }
 
@@ -214,7 +213,6 @@ fun AndrosApp(
     var mergeActive by rememberSaveable { mutableStateOf(false) }
     var scanActive by rememberSaveable { mutableStateOf(false) }
     var aboutActive by rememberSaveable { mutableStateOf(false) }
-    var settingsActive by rememberSaveable { mutableStateOf(false) }
     var missingRecentPdf by remember { mutableStateOf<RecentPdf?>(null) }
     var showPermissionOnboarding by remember {
         mutableStateOf(!hasAllStartupPermissions(context))
@@ -236,8 +234,7 @@ fun AndrosApp(
         rotatePagesUri == null &&
         !mergeActive &&
         !scanActive &&
-        !aboutActive &&
-        !settingsActive
+        !aboutActive
 
     val activity = context as? ComponentActivity
     DisposableEffect(showingReader) {
@@ -251,14 +248,39 @@ fun AndrosApp(
         }
     }
 
+    suspend fun resolveDurablePdf(uri: Uri, intentFlags: Int = 0): Pair<Uri, PdfFileInfo> {
+        return withContext(Dispatchers.IO) {
+            val durable = context.ensureDurablePdfAccess(uri, intentFlags)
+            durable to context.queryPdfInfo(durable)
+        }
+    }
+
+    suspend fun rememberRecent(originalUri: Uri, durableUri: Uri, info: PdfFileInfo) {
+        val original = originalUri.toString()
+        val durable = durableUri.toString()
+        if (durable != original) {
+            repository.remove(original)
+        }
+        repository.addOrUpdate(
+            uri = durable,
+            displayName = info.displayName,
+            sizeBytes = info.sizeBytes,
+        )
+    }
+
     fun openUri(uri: Uri, preferredPage: Int? = null, intentFlags: Int = 0) {
-        context.takePersistableReadPermission(uri, intentFlags)
-        val info = context.queryPdfInfo(uri)
-        val uriString = uri.toString()
         scope.launch {
-            val page = preferredPage ?: repository.getLastPage(uriString)
+            val (durableUri, info) = resolveDurablePdf(uri, intentFlags)
+            val original = uri.toString()
+            val durable = durableUri.toString()
+            val page = preferredPage
+                ?: repository.getLastPage(durable)
+                ?: repository.getLastPage(original)
+            if (durable != original) {
+                repository.remove(original)
+            }
             repository.addOrUpdate(
-                uri = uriString,
+                uri = durable,
                 displayName = info.displayName,
                 sizeBytes = info.sizeBytes,
             )
@@ -272,22 +294,16 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
-            settingsActive = false
             readerName = info.displayName
             readerInitialPage = page
-            readerUri = uriString
+            readerUri = durable
         }
     }
 
     fun openForImageConversion(uri: Uri, intentFlags: Int = 0) {
-        context.takePersistableReadPermission(uri, intentFlags)
-        val info = context.queryPdfInfo(uri)
         scope.launch {
-            repository.addOrUpdate(
-                uri = uri.toString(),
-                displayName = info.displayName,
-                sizeBytes = info.sizeBytes,
-            )
+            val (durableUri, info) = resolveDurablePdf(uri, intentFlags)
+            rememberRecent(uri, durableUri, info)
             signPdfUri = null
             deletePagesUri = null
             reorderPagesUri = null
@@ -295,22 +311,16 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
-            settingsActive = false
             readerUri = null
             convertToWordUri = null
-            convertToImageUri = uri.toString()
+            convertToImageUri = durableUri.toString()
         }
     }
 
     fun openForWordConversion(uri: Uri, intentFlags: Int = 0) {
-        context.takePersistableReadPermission(uri, intentFlags)
-        val info = context.queryPdfInfo(uri)
         scope.launch {
-            repository.addOrUpdate(
-                uri = uri.toString(),
-                displayName = info.displayName,
-                sizeBytes = info.sizeBytes,
-            )
+            val (durableUri, info) = resolveDurablePdf(uri, intentFlags)
+            rememberRecent(uri, durableUri, info)
             signPdfUri = null
             deletePagesUri = null
             reorderPagesUri = null
@@ -318,22 +328,16 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
-            settingsActive = false
             readerUri = null
             convertToImageUri = null
-            convertToWordUri = uri.toString()
+            convertToWordUri = durableUri.toString()
         }
     }
 
     fun openForSigning(uri: Uri, intentFlags: Int = 0) {
-        context.takePersistableReadPermission(uri, intentFlags)
-        val info = context.queryPdfInfo(uri)
         scope.launch {
-            repository.addOrUpdate(
-                uri = uri.toString(),
-                displayName = info.displayName,
-                sizeBytes = info.sizeBytes,
-            )
+            val (durableUri, info) = resolveDurablePdf(uri, intentFlags)
+            rememberRecent(uri, durableUri, info)
             convertToImageUri = null
             convertToWordUri = null
             deletePagesUri = null
@@ -342,78 +346,59 @@ fun AndrosApp(
             mergeActive = false
             scanActive = false
             aboutActive = false
-            settingsActive = false
             readerUri = null
-            signPdfUri = uri.toString()
+            signPdfUri = durableUri.toString()
         }
     }
 
     fun openForDeletePages(uri: Uri, intentFlags: Int = 0) {
-        context.takePersistableReadPermission(uri, intentFlags)
-        val info = context.queryPdfInfo(uri)
         scope.launch {
-            repository.addOrUpdate(
-                uri = uri.toString(),
-                displayName = info.displayName,
-                sizeBytes = info.sizeBytes,
-            )
+            val (durableUri, info) = resolveDurablePdf(uri, intentFlags)
+            rememberRecent(uri, durableUri, info)
             signPdfUri = null
             convertToImageUri = null
             convertToWordUri = null
             mergeActive = false
             scanActive = false
             aboutActive = false
-            settingsActive = false
             readerUri = null
             reorderPagesUri = null
             rotatePagesUri = null
-            deletePagesUri = uri.toString()
+            deletePagesUri = durableUri.toString()
         }
     }
 
     fun openForReorderPages(uri: Uri, intentFlags: Int = 0) {
-        context.takePersistableReadPermission(uri, intentFlags)
-        val info = context.queryPdfInfo(uri)
         scope.launch {
-            repository.addOrUpdate(
-                uri = uri.toString(),
-                displayName = info.displayName,
-                sizeBytes = info.sizeBytes,
-            )
+            val (durableUri, info) = resolveDurablePdf(uri, intentFlags)
+            rememberRecent(uri, durableUri, info)
             signPdfUri = null
             convertToImageUri = null
             convertToWordUri = null
             mergeActive = false
             scanActive = false
             aboutActive = false
-            settingsActive = false
             readerUri = null
             deletePagesUri = null
             rotatePagesUri = null
-            reorderPagesUri = uri.toString()
+            reorderPagesUri = durableUri.toString()
         }
     }
 
     fun openForRotatePages(uri: Uri, intentFlags: Int = 0) {
-        context.takePersistableReadPermission(uri, intentFlags)
-        val info = context.queryPdfInfo(uri)
         scope.launch {
-            repository.addOrUpdate(
-                uri = uri.toString(),
-                displayName = info.displayName,
-                sizeBytes = info.sizeBytes,
-            )
+            val (durableUri, info) = resolveDurablePdf(uri, intentFlags)
+            rememberRecent(uri, durableUri, info)
             signPdfUri = null
             convertToImageUri = null
             convertToWordUri = null
             mergeActive = false
             scanActive = false
             aboutActive = false
-            settingsActive = false
             readerUri = null
             deletePagesUri = null
             reorderPagesUri = null
-            rotatePagesUri = uri.toString()
+            rotatePagesUri = durableUri.toString()
         }
     }
 
@@ -427,7 +412,6 @@ fun AndrosApp(
         readerUri = null
         scanActive = false
         aboutActive = false
-        settingsActive = false
         mergeActive = true
     }
 
@@ -441,7 +425,6 @@ fun AndrosApp(
         readerUri = null
         mergeActive = false
         aboutActive = false
-        settingsActive = false
         scanActive = true
     }
 
@@ -455,22 +438,7 @@ fun AndrosApp(
         readerUri = null
         mergeActive = false
         scanActive = false
-        settingsActive = false
         aboutActive = true
-    }
-
-    fun openSettings() {
-        signPdfUri = null
-        convertToImageUri = null
-        convertToWordUri = null
-        deletePagesUri = null
-        reorderPagesUri = null
-        rotatePagesUri = null
-        readerUri = null
-        mergeActive = false
-        scanActive = false
-        aboutActive = false
-        settingsActive = true
     }
 
     LaunchedEffect(externalPdfUri) {
@@ -622,7 +590,6 @@ fun AndrosApp(
 
     fun navigateBack() {
         when {
-            settingsActive -> settingsActive = false
             aboutActive -> aboutActive = false
             signPdfUri != null -> signPdfUri = null
             mergeActive -> mergeActive = false
@@ -669,11 +636,6 @@ fun AndrosApp(
                 }
             },
         )
-    }
-
-    if (settingsActive) {
-        SettingsScreen(onBack = ::navigateBack)
-        return
     }
 
     if (aboutActive) {
@@ -776,7 +738,6 @@ fun AndrosApp(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             MainTopAppBar(
-                onSettingsClick = ::openSettings,
                 onAboutClick = ::openAbout,
             )
         },
@@ -790,22 +751,12 @@ fun AndrosApp(
         when (currentDestination) {
             AppDestination.Home -> HomeScreen(
                 modifier = Modifier.padding(innerPadding),
-                recentFiles = recentFilesUi.take(5),
+                recentFiles = recentFilesUi,
                 onOpenPdf = ::launchPicker,
-                onViewAllRecent = { currentDestination = AppDestination.Recent },
                 onRecentFileClick = { file ->
                     recentPdfs.firstOrNull { it.uri == file.id }?.let(::openRecent)
                 },
                 onRecentFileRemove = { file -> removeFromRecents(file.id) },
-            )
-
-            AppDestination.Recent -> RecentFilesScreen(
-                modifier = Modifier.padding(innerPadding),
-                recentFiles = recentFilesUi,
-                onFileClick = { file ->
-                    recentPdfs.firstOrNull { it.uri == file.id }?.let(::openRecent)
-                },
-                onFileRemove = { file -> removeFromRecents(file.id) },
             )
 
             AppDestination.Tools -> ToolsScreen(
@@ -822,6 +773,10 @@ fun AndrosApp(
                         QuickToolId.Scan -> openScan()
                     }
                 },
+            )
+
+            AppDestination.Settings -> SettingsScreen(
+                modifier = Modifier.padding(innerPadding),
             )
         }
     }
@@ -850,7 +805,6 @@ private fun android.content.Context.findActivity(): Activity? {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainTopAppBar(
-    onSettingsClick: () -> Unit,
     onAboutClick: () -> Unit,
 ) {
     TopAppBar(
@@ -863,13 +817,6 @@ private fun MainTopAppBar(
             )
         },
         actions = {
-            IconButton(onClick = onSettingsClick) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = stringResource(R.string.settings_open),
-                    tint = Color.White,
-                )
-            }
             IconButton(onClick = onAboutClick) {
                 Icon(
                     imageVector = Icons.Outlined.Info,

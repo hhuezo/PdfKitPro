@@ -89,13 +89,11 @@ private val ScanText = Color(0xFF08434C)
 
 private data class QuickTool(
     val titleRes: Int,
-    val subtitleRes: Int,
     val icon: ImageVector,
     val cardBackground: Color,
     val iconBackground: Color,
     val iconTint: Color,
     val titleColor: Color,
-    val subtitleColor: Color,
 )
 
 @Composable
@@ -106,83 +104,67 @@ fun ToolsScreen(
     val tools = listOf(
         QuickTool(
             titleRes = R.string.reorder_pages,
-            subtitleRes = R.string.reorder_pages_subtitle,
             icon = Icons.Outlined.Reorder,
             cardBackground = ReorderCardBg,
             iconBackground = Color.White.copy(alpha = 0.9f),
             iconTint = ReorderIconTint,
             titleColor = ReorderText,
-            subtitleColor = ReorderText.copy(alpha = 0.72f),
         ) to QuickToolId.ReorderPages,
         QuickTool(
             titleRes = R.string.rotate_pages_title,
-            subtitleRes = R.string.rotate_pages_subtitle,
             icon = Icons.Outlined.Rotate90DegreesCw,
             cardBackground = RotateCardBg,
             iconBackground = Color.White.copy(alpha = 0.9f),
             iconTint = RotateIconTint,
             titleColor = RotateText,
-            subtitleColor = RotateText.copy(alpha = 0.72f),
         ) to QuickToolId.RotatePages,
         QuickTool(
             titleRes = R.string.merge_pdfs,
-            subtitleRes = R.string.merge_pdfs_subtitle,
             icon = Icons.Outlined.MergeType,
             cardBackground = MergeCardBg,
             iconBackground = Color.White.copy(alpha = 0.9f),
             iconTint = MergeIconTint,
             titleColor = MergeText,
-            subtitleColor = MergeText.copy(alpha = 0.72f),
         ) to QuickToolId.Merge,
         QuickTool(
             titleRes = R.string.scan_to_pdf,
-            subtitleRes = R.string.scan_to_pdf_subtitle,
             icon = Icons.Outlined.DocumentScanner,
             cardBackground = ScanCardBg,
             iconBackground = Color.White.copy(alpha = 0.9f),
             iconTint = ScanIconTint,
             titleColor = ScanText,
-            subtitleColor = ScanText.copy(alpha = 0.72f),
         ) to QuickToolId.Scan,
         QuickTool(
             titleRes = R.string.sign_pdf,
-            subtitleRes = R.string.sign_pdf_subtitle,
             icon = Icons.Outlined.Draw,
             cardBackground = SignCardBg,
             iconBackground = Color.White.copy(alpha = 0.9f),
             iconTint = SignIconTint,
             titleColor = SignText,
-            subtitleColor = SignText.copy(alpha = 0.72f),
         ) to QuickToolId.Sign,
         QuickTool(
             titleRes = R.string.pdf_to_image,
-            subtitleRes = R.string.pdf_to_image_subtitle,
             icon = Icons.Outlined.Image,
             cardBackground = ImageCardBg,
             iconBackground = Color.White.copy(alpha = 0.9f),
             iconTint = ImageIconTint,
             titleColor = ImageText,
-            subtitleColor = ImageText.copy(alpha = 0.72f),
         ) to QuickToolId.ToImage,
         QuickTool(
             titleRes = R.string.pdf_to_word,
-            subtitleRes = R.string.pdf_to_word_subtitle,
             icon = Icons.AutoMirrored.Outlined.Article,
             cardBackground = WordCardBg,
             iconBackground = Color.White.copy(alpha = 0.9f),
             iconTint = WordIconTint,
             titleColor = WordText,
-            subtitleColor = WordText.copy(alpha = 0.72f),
         ) to QuickToolId.ToWord,
         QuickTool(
             titleRes = R.string.delete_pages,
-            subtitleRes = R.string.delete_pages_subtitle,
             icon = Icons.Outlined.DeleteSweep,
             cardBackground = DeleteCardBg,
             iconBackground = Color.White.copy(alpha = 0.9f),
             iconTint = DeleteIconTint,
             titleColor = DeleteText,
-            subtitleColor = DeleteText.copy(alpha = 0.72f),
         ) to QuickToolId.DeletePages,
     )
 
@@ -194,8 +176,6 @@ fun ToolsScreen(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             tools.chunked(2).forEach { row ->
-                // Solo la pareja de Reordenar (descripción en 2 líneas) reserva ese alto.
-                val subtitleMinLines = if (row.any { it.second == QuickToolId.ReorderPages }) 2 else 1
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -206,7 +186,6 @@ fun ToolsScreen(
                         ToolCard(
                             tool = tool,
                             onClick = { onToolClick(id) },
-                            subtitleMinLines = subtitleMinLines,
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight(),
@@ -225,7 +204,6 @@ fun ToolsScreen(
 private fun ToolCard(
     tool: QuickTool,
     onClick: () -> Unit,
-    subtitleMinLines: Int = 1,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -249,20 +227,12 @@ private fun ToolCard(
                 tint = tool.iconTint,
             )
         }
-        Column {
-            Text(
-                text = stringResource(tool.titleRes),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = tool.titleColor,
-            )
-            Text(
-                text = stringResource(tool.subtitleRes),
-                style = MaterialTheme.typography.labelSmall,
-                color = tool.subtitleColor,
-                minLines = subtitleMinLines,
-            )
-        }
+        Text(
+            text = stringResource(tool.titleRes),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = tool.titleColor,
+        )
     }
 }
 
