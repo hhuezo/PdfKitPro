@@ -21,8 +21,8 @@ android {
         applicationId = "com.hhuezo.pdfconverter"
         minSdk = 24
         targetSdk = 36
-        versionCode = 26
-        versionName = "1.2.4"
+        versionCode = 29
+        versionName = "1.2.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

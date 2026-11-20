@@ -6,6 +6,10 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+    <!-- ML Kit Document Scanner fuerza portrait; no debe restringir dispositivos. -->
+    <uses-feature
+        android:name="android.hardware.screen.portrait"
+        android:required="false" />
 
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
