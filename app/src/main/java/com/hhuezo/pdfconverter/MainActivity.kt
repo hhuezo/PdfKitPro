@@ -67,6 +67,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hhuezo.pdfconverter.data.RecentPdf
 import com.hhuezo.pdfconverter.data.RecentPdfsRepository
@@ -108,6 +109,8 @@ class MainActivity : AppCompatActivity() {
 
     private val externalPdfUri = MutableStateFlow<Uri?>(null)
     private var pendingIntentFlags: Int = 0
+    /** PDF abierto desde otra app (WhatsApp, archivos) sin estar ya dentro de esta. */
+    private val returnToCaller = MutableStateFlow(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -120,13 +123,17 @@ class MainActivity : AppCompatActivity() {
                 darkScrim = Color.Transparent.toArgb(),
             ),
         )
+        returnToCaller.value = savedInstanceState?.getBoolean(STATE_RETURN_TO_CALLER)
+            ?: isExternalPdfIntent(intent)
         handleIncomingIntent(intent)
         setContent {
             AndrosTheme {
                 val incomingUri by externalPdfUri.collectAsStateWithLifecycle()
+                val leaveToCaller by returnToCaller.collectAsStateWithLifecycle()
                 AndrosApp(
                     externalPdfUri = incomingUri,
                     externalIntentFlags = pendingIntentFlags,
+                    returnToCaller = leaveToCaller,
                     onExternalPdfConsumed = {
                         externalPdfUri.value = null
                         pendingIntentFlags = 0
@@ -136,9 +143,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_RETURN_TO_CALLER, returnToCaller.value)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        // singleTask reutiliza esta actividad. Si no estaba en primer plano,
+        // el usuario venía de la otra app y Atrás debe volver allí.
+        if (isExternalPdfIntent(intent) &&
+            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        ) {
+            returnToCaller.value = true
+        }
         handleIncomingIntent(intent)
     }
 
@@ -147,6 +166,10 @@ class MainActivity : AppCompatActivity() {
         val uri = extractPdfUri(intent) ?: return
         pendingIntentFlags = intent.flags
         externalPdfUri.value = uri
+    }
+
+    private fun isExternalPdfIntent(intent: Intent?): Boolean {
+        return intent != null && extractPdfUri(intent) != null
     }
 
     private fun extractPdfUri(intent: Intent): Uri? {
@@ -162,6 +185,10 @@ class MainActivity : AppCompatActivity() {
             }
             else -> null
         }
+    }
+
+    private companion object {
+        const val STATE_RETURN_TO_CALLER = "return_to_caller"
     }
 }
 
@@ -192,6 +219,7 @@ enum class AppDestination(
 fun AndrosApp(
     externalPdfUri: Uri? = null,
     externalIntentFlags: Int = 0,
+    returnToCaller: Boolean = false,
     onExternalPdfConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -599,7 +627,14 @@ fun AndrosApp(
             deletePagesUri != null -> deletePagesUri = null
             convertToWordUri != null -> convertToWordUri = null
             convertToImageUri != null -> convertToImageUri = null
-            readerUri != null -> readerUri = null
+            readerUri != null -> {
+                if (returnToCaller) {
+                    context.findActivity()?.finish()
+                } else {
+                    readerUri = null
+                }
+            }
+            returnToCaller -> context.findActivity()?.finish()
             currentDestination != AppDestination.Home -> {
                 currentDestination = AppDestination.Home
             }
