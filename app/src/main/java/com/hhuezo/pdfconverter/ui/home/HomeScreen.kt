@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FolderOpen
@@ -30,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -38,10 +40,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
 import com.hhuezo.pdfconverter.ui.theme.PdfAccent
-import com.hhuezo.pdfconverter.ui.theme.PdfAccentContainer
+import com.hhuezo.pdfconverter.ui.theme.Primary
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
+import com.hhuezo.pdfconverter.ui.theme.StudioHeroEnd
+import com.hhuezo.pdfconverter.ui.theme.StudioHeroStart
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 
 data class RecentPdfFile(
     val id: String,
@@ -55,19 +62,22 @@ fun HomeScreen(
     onOpenPdf: () -> Unit = {},
     onRecentFileClick: (RecentPdfFile) -> Unit = {},
     onRecentFileRemove: (RecentPdfFile) -> Unit = {},
+    onClearRecentHistory: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(start = 16.dp, end = 16.dp, top = 24.dp),
+            .padding(horizontal = 20.dp)
+            .padding(top = 16.dp),
     ) {
         OpenPdfHero(onClick = onOpenPdf)
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         RecentFilesSection(
             files = recentFiles,
             onFileClick = onRecentFileClick,
             onFileRemove = onRecentFileRemove,
+            onClearHistory = onClearRecentHistory,
             modifier = Modifier.weight(1f),
         )
     }
@@ -75,57 +85,67 @@ fun HomeScreen(
 
 @Composable
 private fun OpenPdfHero(onClick: () -> Unit) {
+    val shape = RoundedCornerShape(24.dp)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(160.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.primary)
-            .clickable(onClick = onClick),
+            .shadow(
+                elevation = 16.dp,
+                shape = shape,
+                ambientColor = Primary.copy(alpha = 0.32f),
+                spotColor = Primary.copy(alpha = 0.28f),
+            )
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(StudioHeroStart, StudioHeroEnd),
+                    start = Offset(0f, 0f),
+                    end = Offset(900f, 500f),
+                ),
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.42f), shape)
+            .clickable(onClick = onClick)
+            .padding(vertical = 28.dp, horizontal = 24.dp),
         contentAlignment = Alignment.Center,
     ) {
-        // Subtle dot pattern overlay
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .align(Alignment.TopEnd)
+                .size(140.dp)
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.12f),
+                            Color.White.copy(alpha = 0.22f),
                             Color.Transparent,
                         ),
-                        center = Offset(0.3f, 0.2f),
-                        radius = 600f,
-                    )
-                )
+                    ),
+                ),
         )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.FolderOpen,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(32.dp),
-                )
-            }
+            Icon(
+                imageVector = Icons.Filled.FolderOpen,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(36.dp),
+            )
             Text(
                 text = stringResource(R.string.open_pdf),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.2).sp,
+                ),
+                color = Color.White,
             )
             Text(
                 text = stringResource(R.string.open_pdf_subtitle),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 0.3.sp,
+                ),
+                color = Color.White.copy(alpha = 0.85f),
             )
         }
     }
@@ -136,15 +156,54 @@ private fun RecentFilesSection(
     files: List<RecentPdfFile>,
     onFileClick: (RecentPdfFile) -> Unit,
     onFileRemove: (RecentPdfFile) -> Unit,
+    onClearHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.recent_files),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp, vertical = 2.dp)
+                .padding(bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.recent_files),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.2).sp,
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (files.isNotEmpty()) {
+                Text(
+                    text = files.size.toString(),
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .clip(RoundedCornerShape(50))
+                        .iosGlass(shape = RoundedCornerShape(50), elevation = 0.dp, tinted = true)
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    color = Primary,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = stringResource(R.string.recent_clear_all),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onClearHistory)
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = Primary,
+                )
+            }
+        }
 
         if (files.isEmpty()) {
             EmptyRecentFiles()
@@ -152,7 +211,7 @@ private fun RecentFilesSection(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(files, key = { it.id }) { file ->
                     RecentFileRow(
@@ -168,11 +227,11 @@ private fun RecentFilesSection(
 
 @Composable
 private fun EmptyRecentFiles() {
+    val shape = RoundedCornerShape(20.dp)
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .iosGlass(shape = shape, elevation = 6.dp, tinted = true)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -203,47 +262,35 @@ fun RecentFileRow(
     onClick: () -> Unit,
     onRemove: (() -> Unit)? = null,
 ) {
+    val shape = RoundedCornerShape(20.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(16.dp),
-            )
+            .iosGlass(shape = shape, elevation = 8.dp, tinted = true)
             .clickable(onClick = onClick)
-            .padding(start = 12.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
+            .padding(start = 14.dp, end = 4.dp, top = 14.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(PdfAccentContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Filled.PictureAsPdf,
-                contentDescription = null,
-                tint = PdfAccent,
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
+        PdfThumbnailBadge()
+        Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = file.name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.1).sp,
+                ),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = file.meta,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         if (onRemove != null) {
@@ -251,10 +298,35 @@ fun RecentFileRow(
                 Icon(
                     imageVector = Icons.Outlined.Close,
                     contentDescription = stringResource(R.string.recent_remove),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PdfThumbnailBadge() {
+    Box(
+        modifier = Modifier
+            .width(44.dp)
+            .height(54.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(Primary)
+            .border(1.dp, Primary.copy(alpha = 0.35f), RoundedCornerShape(10.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "PDF",
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 0.8.sp,
+                lineHeight = 14.sp,
+            ),
+            color = Color.White,
+        )
     }
 }
 
@@ -262,7 +334,9 @@ fun RecentFileRow(
 @Composable
 private fun HomeScreenPreview() {
     AndrosTheme {
-        HomeScreen(recentFiles = sampleRecentFiles)
+        StudioBackground {
+            HomeScreen(recentFiles = sampleRecentFiles)
+        }
     }
 }
 
@@ -270,12 +344,16 @@ private fun HomeScreenPreview() {
 @Composable
 private fun HomeScreenEmptyPreview() {
     AndrosTheme {
-        HomeScreen(recentFiles = emptyList())
+        StudioBackground {
+            HomeScreen(recentFiles = emptyList())
+        }
     }
 }
 
 private val sampleRecentFiles = listOf(
-    RecentPdfFile("1", "Informe_Trimestral_Q3.pdf", "12 oct 2023 • 2.4 MB"),
-    RecentPdfFile("2", "Contrato_Arrendamiento.pdf", "10 oct 2023 • 850 KB"),
-    RecentPdfFile("3", "Itinerario_Viaje_Tokio.pdf", "05 oct 2023 • 1.1 MB"),
+    RecentPdfFile("1", "1795199117738_E66BCBD7-....pdf", "130 KB • 20 nov 2026"),
+    RecentPdfFile("2", "1795199112872_E66BCBD7-....pdf", "130 KB • 20 nov 2026"),
+    RecentPdfFile("3", "1795195758732_E66BCBD7-....pdf", "130 KB • 20 nov 2026"),
+    RecentPdfFile("4", "1795194795975_Factura_DT....pdf", "1019 KB • 20 nov 2026"),
+    RecentPdfFile("5", "1795194783889_Factura_DT....pdf", "1018 KB • 20 nov 2026"),
 )

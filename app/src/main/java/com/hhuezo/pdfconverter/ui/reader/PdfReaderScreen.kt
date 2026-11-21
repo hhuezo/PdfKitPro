@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
@@ -129,7 +130,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
+import com.hhuezo.pdfconverter.ui.theme.OnPrimary
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
@@ -509,9 +513,10 @@ fun PdfReaderScreen(
             }
     }
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             AnimatedVisibility(
@@ -529,6 +534,7 @@ fun PdfReaderScreen(
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
+                                    color = OnPrimary,
                                 )
                                 session?.let { doc ->
                                     val zoomLabel = if (scale > 1.01f) {
@@ -543,7 +549,7 @@ fun PdfReaderScreen(
                                             doc.pageCount,
                                         ) + zoomLabel,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                                        color = OnPrimary.copy(alpha = 0.85f),
                                     )
                                 }
                             }
@@ -553,6 +559,7 @@ fun PdfReaderScreen(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = stringResource(R.string.reader_back),
+                                    tint = OnPrimary,
                                 )
                             }
                         },
@@ -567,6 +574,7 @@ fun PdfReaderScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.ZoomInMap,
                                         contentDescription = stringResource(R.string.reader_zoom_reset),
+                                        tint = OnPrimary,
                                     )
                                 }
                             }
@@ -583,6 +591,7 @@ fun PdfReaderScreen(
                                             R.string.reader_reading_mode
                                         },
                                     ),
+                                    tint = OnPrimary,
                                 )
                             }
                             IconButton(
@@ -608,6 +617,7 @@ fun PdfReaderScreen(
                                             R.string.reader_search
                                         },
                                     ),
+                                    tint = OnPrimary,
                                 )
                             }
                             IconButton(
@@ -621,6 +631,7 @@ fun PdfReaderScreen(
                                 Icon(
                                     imageVector = Icons.Outlined.FindInPage,
                                     contentDescription = stringResource(R.string.reader_go_to_page),
+                                    tint = OnPrimary,
                                 )
                             }
                             Box {
@@ -631,6 +642,7 @@ fun PdfReaderScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.MoreVert,
                                         contentDescription = stringResource(R.string.reader_more),
+                                        tint = OnPrimary,
                                     )
                                 }
                                 ReaderToolsMenu(
@@ -912,6 +924,7 @@ fun PdfReaderScreen(
             }
         }
     }
+    } // StudioBackground
 
     if (showGoToPage && session != null) {
         val pageCount = session!!.pageCount
@@ -1062,47 +1075,46 @@ private fun SearchBar(
     enabled: Boolean,
     focusRequester: FocusRequester,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .iosGlass(elevation = 0.dp, bar = true),
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .focusRequester(focusRequester),
-                singleLine = true,
-                enabled = enabled,
-                label = { Text(stringResource(R.string.reader_search_hint)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Search,
-                        contentDescription = null,
-                    )
-                },
-                trailingIcon = {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { onQueryChange("") }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Close,
-                                contentDescription = stringResource(R.string.reader_search_close),
-                            )
-                        }
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .focusRequester(focusRequester),
+            singleLine = true,
+            enabled = enabled,
+            label = { Text(stringResource(R.string.reader_search_hint)) },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = null,
+                )
+            },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = stringResource(R.string.reader_search_close),
+                        )
                     }
-                },
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Search,
-                ),
-                keyboardActions = KeyboardActions(
-                    onSearch = { if (enabled && query.isNotBlank()) onSearch() },
-                ),
-            )
-            if (isSearching) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
+                }
+            },
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Search,
+            ),
+            keyboardActions = KeyboardActions(
+                onSearch = { if (enabled && query.isNotBlank()) onSearch() },
+            ),
+        )
+        if (isSearching) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -1116,17 +1128,14 @@ private fun SearchResultsBar(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.navigationBarInsetPadding(),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 6.dp,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .iosGlass(elevation = 8.dp, bar = true)
+            .navigationBarInsetPadding()
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
             when {
                 isSearching -> {
                     Text(
@@ -1203,7 +1212,6 @@ private fun SearchResultsBar(
                     )
                 }
             }
-        }
     }
 }
 
@@ -1213,41 +1221,37 @@ private fun TextSelectionBar(
     onCopy: () -> Unit,
     onClear: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.navigationBarInsetPadding(),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 6.dp,
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .iosGlass(elevation = 8.dp, bar = true)
+            .navigationBarInsetPadding()
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Button(onClick = onCopy) {
-                Icon(
-                    imageVector = Icons.Outlined.ContentCopy,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.reader_copy))
-            }
-            Text(
-                text = preview.replace('\n', ' '),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
+        Button(onClick = onCopy) {
+            Icon(
+                imageVector = Icons.Outlined.ContentCopy,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
             )
-            IconButton(onClick = onClear) {
-                Icon(
-                    imageVector = Icons.Outlined.Close,
-                    contentDescription = stringResource(R.string.reader_selection_clear),
-                )
-            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.reader_copy))
+        }
+        Text(
+            text = preview.replace('\n', ' '),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = onClear) {
+            Icon(
+                imageVector = Icons.Outlined.Close,
+                contentDescription = stringResource(R.string.reader_selection_clear),
+            )
         }
     }
 }

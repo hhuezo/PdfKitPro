@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,12 +31,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.FilterNone
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Button
@@ -76,7 +77,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.PdfBlankPageDetector
@@ -316,9 +319,10 @@ fun PdfDeletePagesScreen(
     val pageCount = session?.pageCount ?: 0
     val remainingCount = (pageCount - selectedPages.size).coerceAtLeast(0)
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
@@ -356,10 +360,10 @@ fun PdfDeletePagesScreen(
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.navigationBarInsetPadding(),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
+            Column(
+                modifier = Modifier
+                    .iosGlass(elevation = 10.dp, bar = true)
+                    .navigationBarInsetPadding(),
             ) {
                 if (uiState == DeleteUiState.Ready) {
                     Column(
@@ -576,6 +580,8 @@ fun PdfDeletePagesScreen(
             }
         }
     }
+    }
+
 }
 
 @Composable
@@ -688,15 +694,24 @@ private fun SelectablePdfPage(
                     .padding(6.dp)
                     .size(44.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        color = if (selected) {
+                            errorColor.copy(alpha = 0.16f)
+                        } else {
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+                        },
+                        shape = CircleShape,
+                    )
+                    .border(
+                        width = 2.dp,
+                        color = Color.White,
                         shape = CircleShape,
                     ),
             ) {
                 Icon(
                     imageVector = if (selected) {
-                        Icons.Outlined.CheckCircle
+                        Icons.Filled.Delete
                     } else {
-                        Icons.Outlined.RadioButtonUnchecked
+                        Icons.Outlined.Delete
                     },
                     contentDescription = stringResource(
                         if (selected) {
@@ -706,7 +721,7 @@ private fun SelectablePdfPage(
                         },
                     ),
                     tint = if (selected) errorColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(26.dp),
                 )
             }
         }
@@ -721,8 +736,8 @@ private fun SinglePageBlockedBanner(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.errorContainer)
+            .iosGlass(shape = RoundedCornerShape(16.dp), elevation = 4.dp, tinted = true)
+            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f))
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),

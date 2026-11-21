@@ -80,7 +80,9 @@ import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
 import com.hhuezo.pdfconverter.pdf.PdfPageReorderer
 import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.PdfSaveOutcome
@@ -281,9 +283,10 @@ fun PdfReorderPagesScreen(
     val pageCount = session?.pageCount ?: 0
     val hasChanges = pageOrder.isNotEmpty() && pageOrder != List(pageOrder.size) { it }
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
@@ -334,10 +337,10 @@ fun PdfReorderPagesScreen(
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.navigationBarInsetPadding(),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
+            Column(
+                modifier = Modifier
+                    .iosGlass(elevation = 10.dp, bar = true)
+                    .navigationBarInsetPadding(),
             ) {
                 if (uiState == ReorderUiState.Ready) {
                     Column(
@@ -567,6 +570,8 @@ fun PdfReorderPagesScreen(
             }
         }
     }
+    }
+
 }
 
 @Composable
@@ -616,8 +621,8 @@ private fun ReorderPageRow(
 
     Row(
         modifier = modifier
-            .clip(shape)
-            .background(containerColor)
+            .iosGlass(shape = shape, elevation = if (isDragging) 10.dp else 6.dp, tinted = true)
+            .background(containerColor.copy(alpha = 0.35f))
             .border(borderWidth, borderColor, shape)
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -688,8 +693,8 @@ private fun SinglePageBlockedBanner(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.errorContainer)
+            .iosGlass(shape = RoundedCornerShape(16.dp), elevation = 4.dp, tinted = true)
+            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f))
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),

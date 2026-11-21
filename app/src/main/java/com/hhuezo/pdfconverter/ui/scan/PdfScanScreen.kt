@@ -78,7 +78,9 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.ImagesToPdf
@@ -347,9 +349,10 @@ fun PdfScanScreen(
         }
     }
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
@@ -381,10 +384,10 @@ fun PdfScanScreen(
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.navigationBarInsetPadding(),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
+            Column(
+                modifier = Modifier
+                    .iosGlass(elevation = 10.dp, bar = true)
+                    .navigationBarInsetPadding(),
             ) {
                 Column(
                     modifier = Modifier
@@ -575,6 +578,8 @@ fun PdfScanScreen(
             }
         }
     }
+    }
+
 }
 
 @Composable
@@ -599,13 +604,7 @@ private fun ScanPageCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                shape = RoundedCornerShape(12.dp),
-            ),
+            .iosGlass(shape = RoundedCornerShape(20.dp), elevation = 6.dp, tinted = true),
     ) {
         Box(
             modifier = Modifier

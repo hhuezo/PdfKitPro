@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PdfKit Pro</string>
+    <string name="brand_name">PdfKit</string>
+    <string name="brand_pro">Pro</string>
+    <string name="studio_label">Studio</string>
     <string name="open_pdf">Abrir PDF</string>
     <string name="open_pdf_subtitle">Selecciona desde tu dispositivo</string>
-    <string name="recent_files">Archivos recientes</string>
+    <string name="recent_files">Documentos</string>
     <string name="view_all">Ver todos</string>
     <string name="quick_tools">Herramientas</string>
+    <string name="tools_section_title">Herramientas PDF</string>
+    <string name="tools_quick_access">Acceso rápido</string>
+    <string name="tools_local_hint">Procesamiento rápido sin límites. Todos los cambios se guardan localmente en tu dispositivo.</string>
     <string name="read_pdf">Leer PDF</string>
     <string name="read_pdf_subtitle">Visualización mejorada</string>
     <string name="pdf_to_image">PDF a imagen</string>
@@ -42,7 +48,7 @@
 
     <string name="delete_pages_title">Eliminar páginas</string>
     <string name="delete_pages_tap_hint">Toca el icono de cada página para marcarla y eliminarla.</string>
-    <string name="delete_pages_select_blank">Seleccionar en blanco</string>
+    <string name="delete_pages_select_blank">Seleccionar páginas en blanco</string>
     <string name="delete_pages_detecting_blank">Detectando páginas en blanco…</string>
     <string name="delete_pages_blank_badge">En blanco</string>
     <string name="delete_pages_no_blank">No se encontraron páginas en blanco</string>
@@ -154,7 +160,7 @@
     <string name="nav_home">Inicio</string>
     <string name="nav_recent">Recientes</string>
     <string name="nav_tools">Herramientas</string>
-    <string name="settings">Configuración</string>
+    <string name="settings">Ajustes</string>
     <string name="settings_open">Abrir configuración</string>
     <string name="settings_language_title">Idioma</string>
     <string name="settings_language_subtitle">Elige el idioma de la aplicación. Español es el predeterminado.</string>
@@ -202,6 +208,11 @@
     <string name="no_recent_files_hint">Abre un PDF para verlo aquí</string>
     <string name="recent_remove">Quitar de recientes</string>
     <string name="recent_removed">Eliminado de recientes</string>
+    <string name="recent_clear_all">Borrar historial</string>
+    <string name="recent_clear_all_title">¿Borrar todo el historial?</string>
+    <string name="recent_clear_all_message">Se eliminarán los documentos de la lista y las copias temporales guardadas por la app. Los PDF originales en tu dispositivo no se borran.</string>
+    <string name="recent_clear_all_confirm">Borrar todo</string>
+    <string name="recent_cleared">Historial eliminado</string>
     <string name="recent_file_not_found_title">Archivo no encontrado</string>
     <string name="recent_file_not_found_message">«%1$s» ya no está disponible en tu dispositivo. Puede haber sido movido o eliminado.</string>
     <string name="recent_remove_from_list">Eliminar de recientes</string>

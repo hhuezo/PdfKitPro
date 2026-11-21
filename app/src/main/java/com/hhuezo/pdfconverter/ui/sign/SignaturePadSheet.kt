@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -60,6 +61,10 @@ import androidx.compose.ui.unit.dp
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.ui.theme.Primary
 import kotlin.math.roundToInt
+
+/** Fondo del modal: gris suave para que el pad blanco resalte. */
+private val SheetBackground = Color(0xFFE8EAED)
+private val PadBorder = Color(0xFFB0B8C1)
 
 private data class InkStroke(
     val points: List<Offset>,
@@ -109,7 +114,7 @@ fun SignaturePadSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color.White,
+        containerColor = SheetBackground,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
         Column(
@@ -217,12 +222,14 @@ fun SignaturePadSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(2f)
+                    .shadow(6.dp, RoundedCornerShape(16.dp), clip = false)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White, RoundedCornerShape(16.dp))
                     .border(
-                        width = 2.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = RoundedCornerShape(12.dp),
+                        width = 1.5.dp,
+                        color = PadBorder,
+                        shape = RoundedCornerShape(16.dp),
                     )
-                    .background(Color(0xFFF2F4F6), RoundedCornerShape(12.dp))
                     .onSizeChanged { canvasSize = it }
                     .pointerInput(selectedColor, selectedWidthDp) {
                         detectDragGestures(

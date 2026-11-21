@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -79,6 +80,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -103,7 +105,9 @@ import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
 import com.hhuezo.pdfconverter.pdf.PdfSigner
 import com.hhuezo.pdfconverter.pdf.PdfStampOverlay
 import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.ui.theme.Primary
 import com.hhuezo.pdfconverter.ui.theme.PrimaryContainer
@@ -427,9 +431,10 @@ fun PdfSignScreen(
         }
     }
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = Color(0xFFF2F4F6),
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
@@ -482,10 +487,10 @@ fun PdfSignScreen(
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.navigationBarInsetPadding(),
-                color = Color.White,
-                shadowElevation = 8.dp,
+            Column(
+                modifier = Modifier
+                    .iosGlass(elevation = 10.dp, bar = true)
+                    .navigationBarInsetPadding(),
             ) {
                 when (exportState) {
                     SignExportState.Ready -> {
@@ -827,6 +832,8 @@ fun PdfSignScreen(
             }
         }
     }
+    }
+
 
     if (showSignaturePad) {
         SignaturePadSheet(
@@ -929,16 +936,24 @@ private fun SignToolPalette(
     onToolClick: (SignTool) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier.shadow(10.dp, RoundedCornerShape(999.dp)),
-        color = Color(0xE6E0E3E5),
-        shape = RoundedCornerShape(999.dp),
+    val shape = RoundedCornerShape(999.dp)
+    Row(
+        modifier = modifier
+            .iosGlass(shape = shape, elevation = 12.dp, bar = true)
+            // Capa extra más opaca/oscura para que se lean bien sobre el PDF.
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFD8D8DE).copy(alpha = 0.72f),
+                        Color(0xFFC8C8D0).copy(alpha = 0.78f),
+                    ),
+                ),
+                shape = shape,
+            )
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
             ToolButton(
                 icon = Icons.Outlined.Draw,
                 label = stringResource(R.string.sign_tool_signature),
@@ -963,14 +978,13 @@ private fun SignToolPalette(
                 onClick = { onToolClick(SignTool.Initials) },
             )
             PaletteDivider()
-            ToolButton(
-                icon = Icons.Outlined.Event,
-                label = stringResource(R.string.sign_tool_date),
-                selected = selectedTool == SignTool.Date,
-                enabled = enabled,
-                onClick = { onToolClick(SignTool.Date) },
-            )
-        }
+        ToolButton(
+            icon = Icons.Outlined.Event,
+            label = stringResource(R.string.sign_tool_date),
+            selected = selectedTool == SignTool.Date,
+            enabled = enabled,
+            onClick = { onToolClick(SignTool.Date) },
+        )
     }
 }
 
@@ -980,8 +994,8 @@ private fun PaletteDivider() {
         modifier = Modifier
             .padding(horizontal = 2.dp)
             .width(1.dp)
-            .height(24.dp)
-            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            .height(28.dp)
+            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f)),
     )
 }
 
@@ -993,26 +1007,31 @@ private fun ToolButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
+    val contentColor = when {
+        selected -> Color.White
+        else -> MaterialTheme.colorScheme.onSurface
+    }
     Column(
         modifier = Modifier
-            .clip(CircleShape)
+            .clip(RoundedCornerShape(14.dp))
             .background(if (selected) PrimaryContainer else Color.Transparent)
             .clickable(enabled = enabled, onClick = onClick)
-            .size(width = 52.dp, height = 52.dp),
+            .padding(horizontal = 6.dp, vertical = 6.dp)
+            .widthIn(min = 58.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
+            tint = contentColor,
+            modifier = Modifier.size(22.dp),
         )
         Text(
             text = label,
-            fontSize = 9.sp,
-            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            color = contentColor,
+            fontWeight = FontWeight.SemiBold,
             maxLines = 1,
         )
     }

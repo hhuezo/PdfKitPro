@@ -72,3 +72,8 @@ fun androsTopAppBarColors(): TopAppBarColors =
         actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
         scrolledContainerColor = MaterialTheme.colorScheme.primary,
     )
+
+/** Alias — same red primary app bar used across the app. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun studioTopAppBarColors(): TopAppBarColors = androsTopAppBarColors()

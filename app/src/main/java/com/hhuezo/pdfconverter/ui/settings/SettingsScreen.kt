@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
@@ -45,7 +46,9 @@ import androidx.compose.ui.unit.dp
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.data.AppLanguage
 import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,9 +72,10 @@ fun SettingsScreen(
         return
     }
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -102,6 +106,8 @@ fun SettingsScreen(
                 .navigationBarInsetPadding(),
         )
     }
+    }
+
 }
 
 @Composable
@@ -131,13 +137,7 @@ private fun LanguageSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(12.dp),
-            )
+            .iosGlass(shape = RoundedCornerShape(20.dp), elevation = 8.dp, tinted = true)
             .padding(16.dp),
     ) {
         Row(
@@ -228,6 +228,8 @@ private fun LanguageOptionRow(
 @Composable
 private fun SettingsScreenPreview() {
     AndrosTheme {
-        SettingsScreen()
+        StudioBackground {
+            SettingsScreen()
+        }
     }
 }

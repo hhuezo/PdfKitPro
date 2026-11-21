@@ -58,6 +58,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
+import com.hhuezo.pdfconverter.ui.theme.studioBackground
 import com.hhuezo.pdfconverter.util.hasAllStartupPermissions
 import com.hhuezo.pdfconverter.util.missingStartupPermissions
 import com.hhuezo.pdfconverter.util.requiredStartupPermissions
@@ -155,7 +156,7 @@ fun PermissionOnboardingScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .studioBackground()
             .navigationBarInsetPadding(),
     ) {
         PermissionHeader()

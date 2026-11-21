@@ -1,6 +1,7 @@
 package com.hhuezo.pdfconverter.ui.tools
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,13 +21,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Article
-import androidx.compose.material.icons.outlined.Rotate90DegreesCw
+import androidx.compose.material.icons.automirrored.outlined.MergeType
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.MergeType
 import androidx.compose.material.icons.outlined.Reorder
+import androidx.compose.material.icons.outlined.Rotate90DegreesCw
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,14 +36,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
+import com.hhuezo.pdfconverter.ui.theme.BrandTint
+import com.hhuezo.pdfconverter.ui.theme.Primary
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 
 enum class QuickToolId {
     ToImage,
@@ -54,44 +63,20 @@ enum class QuickToolId {
     Scan,
 }
 
-// Distinct soft tones so each tool is easy to spot at a glance.
-private val ImageCardBg = Color(0xFFD8F3E5)
-private val ImageIconTint = Color(0xFF1B6B45)
-private val ImageText = Color(0xFF0E3D28)
-
-private val WordCardBg = Color(0xFFD6ECFF)
-private val WordIconTint = Color(0xFF0B5CAB)
-private val WordText = Color(0xFF063A6B)
-
-private val SignCardBg = Color(0xFFFFE4CC)
-private val SignIconTint = Color(0xFF9A4A12)
-private val SignText = Color(0xFF5C2A08)
-
-private val DeleteCardBg = Color(0xFFFFD6DE)
-private val DeleteIconTint = Color(0xFF9B1B3A)
-private val DeleteText = Color(0xFF5C0F22)
-
-private val RotateCardBg = Color(0xFFFFF0CC)
-private val RotateIconTint = Color(0xFF8A5A00)
-private val RotateText = Color(0xFF4A3500)
-
-private val ReorderCardBg = Color(0xFFD7E8FF)
-private val ReorderIconTint = Color(0xFF1B4F9C)
-private val ReorderText = Color(0xFF0E2A57)
-
-private val MergeCardBg = Color(0xFFE6D9FF)
-private val MergeIconTint = Color(0xFF5B2FA0)
-private val MergeText = Color(0xFF321A63)
-
-private val ScanCardBg = Color(0xFFD4F1F9)
-private val ScanIconTint = Color(0xFF0E6B7A)
-private val ScanText = Color(0xFF08434C)
+// Vibrant pastel glass tints from Studio design
+private val TintBlue = listOf(Color(0xFFC2DCFF), Color(0xFFA2C8FF))
+private val TintAmber = listOf(Color(0xFFFFE4A0), Color(0xFFFDD271))
+private val TintPurple = listOf(Color(0xFFE6D2FF), Color(0xFFD4B6FF))
+private val TintCyan = listOf(Color(0xFFB5F4FC), Color(0xFF89E8F8))
+private val TintPeach = listOf(Color(0xFFFFD2B8), Color(0xFFFFBCA0))
+private val TintMint = listOf(Color(0xFFBFF4D7), Color(0xFF9DEAC0))
+private val TintSky = listOf(Color(0xFFBDE1FF), Color(0xFF97D0FF))
+private val TintRose = listOf(Color(0xFFFFCCD8), Color(0xFFFFB1C2))
 
 private data class QuickTool(
     val titleRes: Int,
     val icon: ImageVector,
-    val cardBackground: Color,
-    val iconBackground: Color,
+    val tint: List<Color>,
     val iconTint: Color,
     val titleColor: Color,
 )
@@ -105,66 +90,58 @@ fun ToolsScreen(
         QuickTool(
             titleRes = R.string.reorder_pages,
             icon = Icons.Outlined.Reorder,
-            cardBackground = ReorderCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = ReorderIconTint,
-            titleColor = ReorderText,
+            tint = TintBlue,
+            iconTint = Color(0xFF1D4ED8),
+            titleColor = Color(0xFF10306E),
         ) to QuickToolId.ReorderPages,
         QuickTool(
             titleRes = R.string.rotate_pages_title,
             icon = Icons.Outlined.Rotate90DegreesCw,
-            cardBackground = RotateCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = RotateIconTint,
-            titleColor = RotateText,
+            tint = TintAmber,
+            iconTint = Color(0xFF925B03),
+            titleColor = Color(0xFF6D2E07),
         ) to QuickToolId.RotatePages,
         QuickTool(
             titleRes = R.string.merge_pdfs,
-            icon = Icons.Outlined.MergeType,
-            cardBackground = MergeCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = MergeIconTint,
-            titleColor = MergeText,
+            icon = Icons.AutoMirrored.Outlined.MergeType,
+            tint = TintPurple,
+            iconTint = Color(0xFF7E22CE),
+            titleColor = Color(0xFF4C1D95),
         ) to QuickToolId.Merge,
         QuickTool(
             titleRes = R.string.scan_to_pdf,
             icon = Icons.Outlined.DocumentScanner,
-            cardBackground = ScanCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = ScanIconTint,
-            titleColor = ScanText,
+            tint = TintCyan,
+            iconTint = Color(0xFF0F766E),
+            titleColor = Color(0xFF0D524D),
         ) to QuickToolId.Scan,
         QuickTool(
             titleRes = R.string.sign_pdf,
             icon = Icons.Outlined.Draw,
-            cardBackground = SignCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = SignIconTint,
-            titleColor = SignText,
+            tint = TintPeach,
+            iconTint = Color(0xFF92400E),
+            titleColor = Color(0xFF783E07),
         ) to QuickToolId.Sign,
         QuickTool(
             titleRes = R.string.pdf_to_image,
             icon = Icons.Outlined.Image,
-            cardBackground = ImageCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = ImageIconTint,
-            titleColor = ImageText,
+            tint = TintMint,
+            iconTint = Color(0xFF047857),
+            titleColor = Color(0xFF064E3B),
         ) to QuickToolId.ToImage,
         QuickTool(
             titleRes = R.string.pdf_to_word,
             icon = Icons.AutoMirrored.Outlined.Article,
-            cardBackground = WordCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = WordIconTint,
-            titleColor = WordText,
+            tint = TintSky,
+            iconTint = Color(0xFF0369A1),
+            titleColor = Color(0xFF035582),
         ) to QuickToolId.ToWord,
         QuickTool(
             titleRes = R.string.delete_pages,
             icon = Icons.Outlined.DeleteSweep,
-            cardBackground = DeleteCardBg,
-            iconBackground = Color.White.copy(alpha = 0.9f),
-            iconTint = DeleteIconTint,
-            titleColor = DeleteText,
+            tint = TintRose,
+            iconTint = Color(0xFFBE123C),
+            titleColor = Color(0xFF881337),
         ) to QuickToolId.DeletePages,
     )
 
@@ -173,30 +150,31 @@ fun ToolsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            tools.chunked(2).forEach { row ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Max),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    row.forEach { (tool, id) ->
-                        ToolCard(
-                            tool = tool,
-                            onClick = { onToolClick(id) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                        )
-                    }
-                    if (row.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+        tools.chunked(2).forEach { row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                row.forEach { (tool, id) ->
+                    ToolCard(
+                        tool = tool,
+                        onClick = { onToolClick(id) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                    )
+                }
+                if (row.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
+
+        ToolsHintBanner()
     }
 }
 
@@ -206,32 +184,113 @@ private fun ToolCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    val shape = RoundedCornerShape(24.dp)
+    Box(
         modifier = modifier
-            .clip(RoundedCornerShape(24.dp))
-            .background(tool.cardBackground)
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .height(108.dp)
+            .shadow(
+                elevation = 10.dp,
+                shape = shape,
+                ambientColor = Color.Black.copy(alpha = 0.05f),
+                spotColor = Color.Black.copy(alpha = 0.04f),
+            )
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    colors = tool.tint,
+                    start = Offset(0f, 0f),
+                    end = Offset(400f, 500f),
+                ),
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.85f), shape)
+            .clickable(onClick = onClick),
+    ) {
+        // Specular glass highlight
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.55f),
+                            Color.White.copy(alpha = 0.10f),
+                        ),
+                        start = Offset(0f, 0f),
+                        end = Offset(500f, 500f),
+                    ),
+                ),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .shadow(2.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.95f))
+                    .border(1.dp, Color.White.copy(alpha = 0.9f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = tool.icon,
+                    contentDescription = null,
+                    tint = tool.iconTint,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Text(
+                text = stringResource(tool.titleRes),
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.2).sp,
+                    lineHeight = 18.sp,
+                ),
+                color = tool.titleColor,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToolsHintBanner() {
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Color.White.copy(alpha = 0.5f))
+            .border(1.dp, Color.White.copy(alpha = 0.7f), shape)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(32.dp)
                 .clip(CircleShape)
-                .background(tool.iconBackground),
+                .background(BrandTint),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = tool.icon,
+                imageVector = Icons.Outlined.Bolt,
                 contentDescription = null,
-                tint = tool.iconTint,
+                tint = Primary,
+                modifier = Modifier.size(16.dp),
             )
         }
         Text(
-            text = stringResource(tool.titleRes),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = tool.titleColor,
+            text = stringResource(R.string.tools_local_hint),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+            ),
+            color = Color(0xFF475569),
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -240,6 +299,8 @@ private fun ToolCard(
 @Composable
 private fun ToolsScreenPreview() {
     AndrosTheme {
-        ToolsScreen(onToolClick = {})
+        StudioBackground {
+            ToolsScreen(onToolClick = {})
+        }
     }
 }

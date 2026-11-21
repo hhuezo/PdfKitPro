@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,7 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -53,7 +53,9 @@ import androidx.compose.ui.unit.dp
 import com.hhuezo.pdfconverter.BuildConfig
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 
 private val GithubBrand = Color(0xFF24292F)
@@ -126,9 +128,10 @@ fun AboutScreen(
         }
     }
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -185,29 +188,32 @@ fun AboutScreen(
             )
         }
     }
+    }
+
 }
 
 @Composable
 private fun AppIdentitySection(versionLabel: String) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp),
+            .iosGlass(shape = RoundedCornerShape(24.dp), elevation = 8.dp, tinted = true)
+            .padding(horizontal = 20.dp, vertical = 24.dp),
     ) {
-        Surface(
-            modifier = Modifier.size(88.dp),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = 1.dp,
-            shadowElevation = 1.dp,
+        Box(
+            modifier = Modifier
+                .size(88.dp)
+                .iosGlass(shape = RoundedCornerShape(20.dp), elevation = 4.dp),
         ) {
             Image(
                 painter = painterResource(R.drawable.ic_app_logo),
                 contentDescription = stringResource(R.string.app_name),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(20.dp)),
             )
         }
         Text(
@@ -238,16 +244,17 @@ private fun DeveloperSection(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Surface(
-                modifier = Modifier.size(52.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .iosGlass(shape = CircleShape, elevation = 2.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Filled.Code,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(12.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
@@ -349,13 +356,7 @@ private fun AboutCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(12.dp),
-            )
+            .iosGlass(shape = RoundedCornerShape(20.dp), elevation = 8.dp, tinted = true)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -425,6 +426,8 @@ private fun LinkChip(
 @Composable
 private fun AboutScreenPreview() {
     AndrosTheme {
-        AboutScreen(onBack = {})
+        StudioBackground {
+            AboutScreen(onBack = {})
+        }
     }
 }

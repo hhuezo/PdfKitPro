@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PdfKit Pro</string>
+    <string name="brand_name">PdfKit</string>
+    <string name="brand_pro">Pro</string>
+    <string name="studio_label">Studio</string>
     <string name="open_pdf">Open PDF</string>
     <string name="open_pdf_subtitle">Choose a file from your device</string>
-    <string name="recent_files">Recent files</string>
+    <string name="recent_files">Documents</string>
     <string name="view_all">View all</string>
     <string name="quick_tools">Tools</string>
+    <string name="tools_section_title">PDF Tools</string>
+    <string name="tools_quick_access">Quick access</string>
+    <string name="tools_local_hint">Fast unlimited processing. All changes are saved locally on your device.</string>
     <string name="read_pdf">Read PDF</string>
     <string name="read_pdf_subtitle">Enhanced viewing</string>
     <string name="pdf_to_image">PDF to image</string>
@@ -202,6 +208,11 @@
     <string name="no_recent_files_hint">Open a PDF to see it here</string>
     <string name="recent_remove">Remove from recents</string>
     <string name="recent_removed">Removed from recents</string>
+    <string name="recent_clear_all">Clear history</string>
+    <string name="recent_clear_all_title">Clear all history?</string>
+    <string name="recent_clear_all_message">Documents will be removed from the list and temporary copies saved by the app will be deleted. Original PDFs on your device are not deleted.</string>
+    <string name="recent_clear_all_confirm">Clear all</string>
+    <string name="recent_cleared">History cleared</string>
     <string name="recent_file_not_found_title">File not found</string>
     <string name="recent_file_not_found_message">“%1$s” is no longer available on your device. It may have been moved or deleted.</string>
     <string name="recent_remove_from_list">Remove from recents</string>

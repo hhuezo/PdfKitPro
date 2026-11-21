@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.hhuezo.pdfconverter.util.clearImportedPdfStorage
 import com.hhuezo.pdfconverter.util.deleteImportedPdfIfOwned
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -73,6 +74,18 @@ class RecentPdfsRepository(private val context: Context) {
             val current = parse(prefs[key].orEmpty()).filterNot { it.uri == uri }
             prefs[key] = serialize(current)
         }
+    }
+
+    /** Clears the whole recents list and deletes app-owned temporary PDF copies. */
+    suspend fun clearAll() {
+        context.recentPdfsStore.edit { prefs ->
+            val current = parse(prefs[key].orEmpty())
+            current.forEach { item ->
+                context.deleteImportedPdfIfOwned(Uri.parse(item.uri))
+            }
+            prefs[key] = serialize(emptyList())
+        }
+        context.clearImportedPdfStorage()
     }
 
     suspend fun getLastPage(uri: String): Int {

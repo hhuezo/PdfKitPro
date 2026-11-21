@@ -79,7 +79,9 @@ import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.pdf.PdfDocumentSession
 import com.hhuezo.pdfconverter.pdf.PdfPageRotator
 import com.hhuezo.pdfconverter.ui.common.SafeBitmapImage
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.PdfSaveOutcome
@@ -297,9 +299,10 @@ fun PdfRotatePagesScreen(
     val modifiedCount = pageRotations.count { normalizeDegrees(it.value) != 0 }
     val unchangedCount = (pageCount - modifiedCount).coerceAtLeast(0)
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
@@ -337,10 +340,10 @@ fun PdfRotatePagesScreen(
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.navigationBarInsetPadding(),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
+            Column(
+                modifier = Modifier
+                    .iosGlass(elevation = 10.dp, bar = true)
+                    .navigationBarInsetPadding(),
             ) {
                 if (uiState == RotateUiState.Ready) {
                     Column(
@@ -536,6 +539,8 @@ fun PdfRotatePagesScreen(
             }
         }
     }
+    }
+
 }
 
 @Composable
@@ -668,15 +673,17 @@ private fun RotatePageCard(
             }
         }
 
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            color = if (isHighlighted) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerHigh
-            },
-            tonalElevation = if (isHighlighted) 2.dp else 0.dp,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .iosGlass(shape = RoundedCornerShape(14.dp), elevation = 4.dp, tinted = true)
+                .then(
+                    if (isHighlighted) {
+                        Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                    } else {
+                        Modifier
+                    },
+                ),
         ) {
             Row(
                 modifier = Modifier

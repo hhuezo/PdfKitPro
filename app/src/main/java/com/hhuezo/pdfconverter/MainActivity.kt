@@ -16,9 +16,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +28,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
@@ -37,15 +42,12 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -59,6 +61,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -67,6 +71,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hhuezo.pdfconverter.data.RecentPdf
@@ -83,11 +88,12 @@ import com.hhuezo.pdfconverter.ui.reader.PdfReaderScreen
 import com.hhuezo.pdfconverter.ui.scan.PdfScanScreen
 import com.hhuezo.pdfconverter.ui.settings.SettingsScreen
 import com.hhuezo.pdfconverter.ui.sign.PdfSignScreen
-import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.ui.theme.AndrosTheme
 import com.hhuezo.pdfconverter.ui.theme.Primary
-import com.hhuezo.pdfconverter.ui.theme.PrimaryFixed
+import com.hhuezo.pdfconverter.ui.theme.PrimaryContainer
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.toimage.PdfToImageScreen
 import com.hhuezo.pdfconverter.ui.toword.PdfToWordScreen
 import com.hhuezo.pdfconverter.ui.tools.QuickToolId
@@ -242,6 +248,7 @@ fun AndrosApp(
     var scanActive by rememberSaveable { mutableStateOf(false) }
     var aboutActive by rememberSaveable { mutableStateOf(false) }
     var missingRecentPdf by remember { mutableStateOf<RecentPdf?>(null) }
+    var showClearHistoryConfirm by remember { mutableStateOf(false) }
     var showPermissionOnboarding by remember {
         mutableStateOf(!hasAllStartupPermissions(context))
     }
@@ -486,6 +493,18 @@ fun AndrosApp(
         }
     }
 
+    fun clearRecentHistory() {
+        scope.launch {
+            repository.clearAll()
+            showClearHistoryConfirm = false
+            Toast.makeText(
+                context,
+                context.getString(R.string.recent_cleared),
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
+
     fun openRecent(pdf: RecentPdf) {
         scope.launch {
             val uri = Uri.parse(pdf.uri)
@@ -673,6 +692,28 @@ fun AndrosApp(
         )
     }
 
+    if (showClearHistoryConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearHistoryConfirm = false },
+            title = {
+                Text(text = stringResource(R.string.recent_clear_all_title))
+            },
+            text = {
+                Text(text = stringResource(R.string.recent_clear_all_message))
+            },
+            confirmButton = {
+                TextButton(onClick = ::clearRecentHistory) {
+                    Text(text = stringResource(R.string.recent_clear_all_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearHistoryConfirm = false }) {
+                    Text(text = stringResource(R.string.reader_cancel))
+                }
+            },
+        )
+    }
+
     if (aboutActive) {
         AboutScreen(onBack = ::navigateBack)
         return
@@ -768,51 +809,54 @@ fun AndrosApp(
         return
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            MainTopAppBar(
-                onAboutClick = ::openAbout,
-            )
-        },
-        bottomBar = {
-            AndrosBottomBar(
-                current = currentDestination,
-                onNavigate = { currentDestination = it },
-            )
-        },
-    ) { innerPadding ->
-        when (currentDestination) {
-            AppDestination.Home -> HomeScreen(
-                modifier = Modifier.padding(innerPadding),
-                recentFiles = recentFilesUi,
-                onOpenPdf = ::launchPicker,
-                onRecentFileClick = { file ->
-                    recentPdfs.firstOrNull { it.uri == file.id }?.let(::openRecent)
-                },
-                onRecentFileRemove = { file -> removeFromRecents(file.id) },
-            )
+    StudioBackground {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            topBar = {
+                MainTopAppBar(
+                    onAboutClick = ::openAbout,
+                )
+            },
+            bottomBar = {
+                AndrosBottomBar(
+                    current = currentDestination,
+                    onNavigate = { currentDestination = it },
+                )
+            },
+        ) { innerPadding ->
+            when (currentDestination) {
+                AppDestination.Home -> HomeScreen(
+                    modifier = Modifier.padding(innerPadding),
+                    recentFiles = recentFilesUi,
+                    onOpenPdf = ::launchPicker,
+                    onRecentFileClick = { file ->
+                        recentPdfs.firstOrNull { it.uri == file.id }?.let(::openRecent)
+                    },
+                    onRecentFileRemove = { file -> removeFromRecents(file.id) },
+                    onClearRecentHistory = { showClearHistoryConfirm = true },
+                )
 
-            AppDestination.Tools -> ToolsScreen(
-                modifier = Modifier.padding(innerPadding),
-                onToolClick = { toolId ->
-                    when (toolId) {
-                        QuickToolId.ToImage -> launchPickerForImage()
-                        QuickToolId.ToWord -> launchPickerForWord()
-                        QuickToolId.Sign -> launchPickerForSign()
-                        QuickToolId.DeletePages -> launchPickerForDeletePages()
-                        QuickToolId.ReorderPages -> launchPickerForReorderPages()
-                        QuickToolId.RotatePages -> launchPickerForRotatePages()
-                        QuickToolId.Merge -> openMerge()
-                        QuickToolId.Scan -> openScan()
-                    }
-                },
-            )
+                AppDestination.Tools -> ToolsScreen(
+                    modifier = Modifier.padding(innerPadding),
+                    onToolClick = { toolId ->
+                        when (toolId) {
+                            QuickToolId.ToImage -> launchPickerForImage()
+                            QuickToolId.ToWord -> launchPickerForWord()
+                            QuickToolId.Sign -> launchPickerForSign()
+                            QuickToolId.DeletePages -> launchPickerForDeletePages()
+                            QuickToolId.ReorderPages -> launchPickerForReorderPages()
+                            QuickToolId.RotatePages -> launchPickerForRotatePages()
+                            QuickToolId.Merge -> openMerge()
+                            QuickToolId.Scan -> openScan()
+                        }
+                    },
+                )
 
-            AppDestination.Settings -> SettingsScreen(
-                modifier = Modifier.padding(innerPadding),
-            )
+                AppDestination.Settings -> SettingsScreen(
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
         }
     }
 }
@@ -820,7 +864,11 @@ fun AndrosApp(
 private fun RecentPdf.toUiModel(): RecentPdfFile {
     val date = formatRecentDate(lastOpenedAt)
     val size = formatFileSize(sizeBytes)
-    val meta = if (date.isNotEmpty()) "$date • $size" else size
+    val meta = when {
+        size.isNotEmpty() && date.isNotEmpty() -> "$size • $date"
+        size.isNotEmpty() -> size
+        else -> date
+    }
     return RecentPdfFile(
         id = uri,
         name = displayName,
@@ -837,31 +885,72 @@ private fun android.content.Context.findActivity(): Activity? {
     return current as? Activity
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainTopAppBar(
     onAboutClick: () -> Unit,
 ) {
-    TopAppBar(
-        title = {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold,
-            )
-        },
-        actions = {
-            IconButton(onClick = onAboutClick) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Primary),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.brand_name),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.3).sp,
+                    ),
+                    color = Color.White,
+                )
+                Text(
+                    text = stringResource(R.string.brand_pro),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.White)
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.6.sp,
+                    ),
+                    color = Primary,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.18f))
+                    .border(1.dp, Color.White.copy(alpha = 0.35f), CircleShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onAboutClick,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
                 Icon(
                     imageVector = Icons.Outlined.Info,
                     contentDescription = stringResource(R.string.about_open),
                     tint = Color.White,
+                    modifier = Modifier.size(18.dp),
                 )
             }
-        },
-        colors = androsTopAppBarColors(),
-    )
+        }
+    }
 }
 
 @Composable
@@ -869,32 +958,59 @@ private fun AndrosBottomBar(
     current: AppDestination,
     onNavigate: (AppDestination) -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shadowElevation = 12.dp,
-        tonalElevation = 0.dp,
-    ) {
-        Column {
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+    val tabBarShape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 16.dp,
+                shape = tabBarShape,
+                clip = false,
+                ambientColor = Color.Black.copy(alpha = 0.12f),
+                spotColor = Color.Black.copy(alpha = 0.10f),
             )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarInsetPadding()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                AppDestination.entries.forEach { destination ->
-                    BottomBarTab(
-                        destination = destination,
-                        selected = destination == current,
-                        onClick = { onNavigate(destination) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+            .clip(tabBarShape)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.92f),
+                        Color(0xFFF0F1F4).copy(alpha = 0.88f),
+                        Color(0xFFE6E8EE).copy(alpha = 0.94f),
+                    ),
+                ),
+            )
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.95f),
+                        Color(0xFFD0D4DC).copy(alpha = 0.55f),
+                    ),
+                ),
+                shape = tabBarShape,
+            ),
+    ) {
+        // Specular top edge for glass contrast
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(Color.White.copy(alpha = 0.9f)),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarInsetPadding()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppDestination.entries.forEach { destination ->
+                BottomBarTab(
+                    destination = destination,
+                    selected = destination == current,
+                    onClick = { onNavigate(destination) },
+                )
             }
         }
     }
@@ -908,37 +1024,65 @@ private fun BottomBarTab(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val backgroundColor = if (selected) PrimaryFixed else Color.Transparent
-    val contentColor = if (selected) {
-        MaterialTheme.colorScheme.primary
+    val labelColor = if (selected) {
+        Primary
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
     }
+    val iconTint = if (selected) Color.White else labelColor
+    val pillShape = RoundedCornerShape(percent = 50)
 
     Column(
         modifier = modifier
-            .height(56.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(backgroundColor)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick,
-            ),
+            )
+            .padding(horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(
-            imageVector = if (selected) destination.selectedIcon else destination.unselectedIcon,
-            contentDescription = stringResource(destination.labelRes),
-            tint = contentColor,
-            modifier = Modifier.size(24.dp),
-        )
+        Box(
+            modifier = Modifier
+                .height(32.dp)
+                .widthIn(min = 56.dp)
+                .then(
+                    if (selected) {
+                        Modifier
+                            .shadow(
+                                elevation = 4.dp,
+                                shape = pillShape,
+                                clip = false,
+                                ambientColor = Primary.copy(alpha = 0.28f),
+                                spotColor = Primary.copy(alpha = 0.28f),
+                            )
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(Primary, PrimaryContainer),
+                                ),
+                                shape = pillShape,
+                            )
+                            .border(1.dp, Color.White.copy(alpha = 0.28f), pillShape)
+                    } else {
+                        Modifier
+                    }
+                )
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (selected) destination.selectedIcon else destination.unselectedIcon,
+                contentDescription = stringResource(destination.labelRes),
+                tint = iconTint,
+                modifier = Modifier.size(16.dp),
+            )
+        }
         Text(
             text = stringResource(destination.labelRes),
-            style = MaterialTheme.typography.labelSmall,
-            color = contentColor,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
+            color = labelColor,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             modifier = Modifier.padding(top = 4.dp),
         )
     }

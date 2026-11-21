@@ -63,6 +63,15 @@ fun Context.deleteImportedPdfIfOwned(uri: Uri) {
     runCatching { if (file.exists()) file.delete() }
 }
 
+/** Deletes all temporary PDFs copied into app storage for the recents history. */
+fun Context.clearImportedPdfStorage() {
+    val dir = File(filesDir, IMPORT_DIR)
+    if (!dir.isDirectory) return
+    dir.listFiles()?.forEach { file ->
+        runCatching { if (file.isFile) file.delete() }
+    }
+}
+
 private fun Context.importedPdfFileFromUri(uri: Uri): File? {
     if (uri.scheme == "file") {
         val path = uri.path ?: return null

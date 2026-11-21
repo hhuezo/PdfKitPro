@@ -76,7 +76,9 @@ import androidx.core.content.FileProvider
 import com.hhuezo.pdfconverter.R
 import com.hhuezo.pdfconverter.data.RecentPdfsRepository
 import com.hhuezo.pdfconverter.pdf.PdfMerger
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.ui.theme.PdfAccent
 import com.hhuezo.pdfconverter.ui.theme.PdfAccentContainer
@@ -325,9 +327,10 @@ fun PdfMergeScreen(
 
     val totalPages = pdfItems.sumOf { it.pageCount }
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
@@ -374,10 +377,10 @@ fun PdfMergeScreen(
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.navigationBarInsetPadding(),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
+            Column(
+                modifier = Modifier
+                    .iosGlass(elevation = 10.dp, bar = true)
+                    .navigationBarInsetPadding(),
             ) {
                 if (uiState == MergeUiState.Ready) {
                     Column(
@@ -554,6 +557,8 @@ fun PdfMergeScreen(
             }
         }
     }
+    }
+
 }
 
 @Composable
@@ -570,13 +575,7 @@ private fun MergeFileCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                shape = RoundedCornerShape(12.dp),
-            )
+            .iosGlass(shape = RoundedCornerShape(20.dp), elevation = 6.dp, tinted = true)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

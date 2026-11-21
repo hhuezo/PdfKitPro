@@ -66,6 +66,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
@@ -84,7 +85,9 @@ import com.hhuezo.pdfconverter.ui.theme.PdfAccent
 import com.hhuezo.pdfconverter.ui.theme.PdfAccentContainer
 import com.hhuezo.pdfconverter.ui.theme.SecondaryContainer
 import com.hhuezo.pdfconverter.ui.theme.SecondaryFixed
+import com.hhuezo.pdfconverter.ui.theme.StudioBackground
 import com.hhuezo.pdfconverter.ui.theme.androsTopAppBarColors
+import com.hhuezo.pdfconverter.ui.theme.iosGlass
 import com.hhuezo.pdfconverter.ui.theme.navigationBarInsetPadding
 import com.hhuezo.pdfconverter.util.PdfFileSaver
 import com.hhuezo.pdfconverter.util.formatFileSize
@@ -224,9 +227,10 @@ fun PdfToWordScreen(
         PageSelectionMode.Custom -> countPagesInRange(rangeInput, pageCount)
     }
 
+    StudioBackground(modifier = modifier) {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
@@ -249,10 +253,10 @@ fun PdfToWordScreen(
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.navigationBarInsetPadding(),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
+            Column(
+                modifier = Modifier
+                    .iosGlass(elevation = 10.dp, bar = true)
+                    .navigationBarInsetPadding(),
             ) {
                 if (convertState == ConvertUiState.Ready) {
                     Column(
@@ -516,8 +520,7 @@ fun PdfToWordScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SecondaryFixed)
+                    .iosGlass(shape = RoundedCornerShape(16.dp), elevation = 4.dp, tinted = true)
                     .padding(12.dp),
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -525,7 +528,7 @@ fun PdfToWordScreen(
                 Icon(
                     imageVector = Icons.Outlined.Info,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondaryFixed,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp),
                 )
                 Text(
@@ -537,11 +540,13 @@ fun PdfToWordScreen(
                         },
                     ),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryFixed,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
     }
+    }
+
 }
 
 @Composable
@@ -549,13 +554,7 @@ private fun FilePreviewCard(name: String, meta: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                shape = RoundedCornerShape(12.dp),
-            )
+            .iosGlass(shape = RoundedCornerShape(20.dp), elevation = 6.dp, tinted = true)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -619,16 +618,17 @@ private fun PageOptionCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                width = 1.dp,
-                color = if (selected) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+            .iosGlass(shape = RoundedCornerShape(20.dp), elevation = 6.dp, tinted = true)
+            .then(
+                if (selected) {
+                    Modifier.border(
+                        width = 1.5.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+                        shape = RoundedCornerShape(20.dp),
+                    )
                 } else {
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                    Modifier
                 },
-                shape = RoundedCornerShape(12.dp),
             )
             .clickable(onClick = onClick)
             .padding(16.dp),
@@ -667,8 +667,7 @@ private fun RangeInputCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .iosGlass(shape = RoundedCornerShape(20.dp), elevation = 6.dp, tinted = true)
             .padding(16.dp),
     ) {
         Row(
